@@ -34,6 +34,9 @@
         const firstDay = new Date(year, month, 1).getDay();
         const daysInMonth = new Date(year, month + 1, 0).getDate();
 
+        const today = new Date();
+        const todayStr = today.toLocaleDateString('en-CA'); // Format: YYYY-MM-DD
+
         document.getElementById("monthYear").textContent =
             date.toLocaleString('default', { month: 'long', year: 'numeric' });
 
@@ -46,7 +49,7 @@
 
             for (let day = 0; day < 7; day++) {
                 const col = document.createElement("div");
-                col.className = "col border py-4"; // Taller box
+                col.className = "col border py-4";
 
                 if (!started && day === firstDay) {
                     started = true;
@@ -55,10 +58,18 @@
                 if (started && dayCounter <= daysInMonth) {
                     col.textContent = dayCounter;
                     const fullDate = new Date(year, month, dayCounter);
-                    col.dataset.date = fullDate.toLocaleDateString('en-CA'); // Fix applied
+                    const fullDateStr = fullDate.toLocaleDateString('en-CA');
 
-                    col.classList.add("bg-light");
+                    col.dataset.date = fullDateStr;
                     col.style.cursor = "pointer";
+
+                    if (fullDateStr === todayStr && year === today.getFullYear() && month === today.getMonth()) {
+                        col.classList.add("bg-primary", "text-white");
+                        selectedElement = col;
+                        console.log("Selected Date:", fullDateStr); // ✅ Logs today on load
+                    } else {
+                        col.classList.add("bg-light");
+                    }
 
                     col.onclick = function () {
                         if (selectedElement) {
@@ -69,12 +80,11 @@
                         col.classList.add("bg-primary", "text-white");
                         selectedElement = col;
 
-                        console.log("Selected Date:", col.dataset.date);
+                        console.log("Selected Date:", col.dataset.date); // ✅ Logs selected date on click
                     };
 
                     dayCounter++;
-                }
-                else {
+                } else {
                     col.innerHTML = "&nbsp;";
                 }
 
