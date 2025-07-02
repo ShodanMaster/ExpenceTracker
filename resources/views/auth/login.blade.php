@@ -1,47 +1,124 @@
-<x-guest-layout>
-    <!-- Session Status -->
-    <x-auth-session-status class="mb-4" :status="session('status')" />
+@extends('layouts.app')
+@section('app-content')
 
-    <form method="POST" action="{{ route('login') }}">
-        @csrf
-
-        <!-- Email Address -->
-        <div>
-            <x-input-label for="email" :value="__('Email')" />
-            <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email')" required autofocus autocomplete="username" />
-            <x-input-error :messages="$errors->get('email')" class="mt-2" />
+<div class="container mt-5">
+    <div class="card">
+        <div class="card-header text-white text-center bg-dark fs-4">
+            <span id="form-title">Login</span>
         </div>
 
-        <!-- Password -->
-        <div class="mt-4">
-            <x-input-label for="password" :value="__('Password')" />
+        <!-- Login Form -->
+        <form action="{{route('login')}}" method="POST" id="login-form">
+            @csrf
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group mb-3">
+                            <input type="text" class="form-control" name="email" id="email" placeholder="Email" value="{{ old('email') }}" required>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group mb-3">
+                            <input type="password" class="form-control" name="password" id="password" placeholder="Password" required>
+                            <!-- Toggle show password -->
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="show-password" />
+                                <label class="form-check-label" for="show-password">Show Password</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-            <x-text-input id="password" class="block mt-1 w-full"
-                            type="password"
-                            name="password"
-                            required autocomplete="current-password" />
 
-            <x-input-error :messages="$errors->get('password')" class="mt-2" />
-        </div>
+                <!-- Link to Signup form -->
+                <div class="form-group text-center mb-3">
+                    <p>Don't have an account? <a href="javascript:void(0);" id="show-signup-form">Sign up</a></p>
+                </div>
+            </div>
+            <div class="card-footer bg-dark d-flex justify-content-between">
 
-        <!-- Remember Me -->
-        <div class="block mt-4">
-            <label for="remember_me" class="inline-flex items-center">
-                <input id="remember_me" type="checkbox" class="rounded dark:bg-gray-900 border-gray-300 dark:border-gray-700 text-indigo-600 shadow-sm focus:ring-indigo-500 dark:focus:ring-indigo-600 dark:focus:ring-offset-gray-800" name="remember">
-                <span class="ms-2 text-sm text-gray-600 dark:text-gray-400">{{ __('Remember me') }}</span>
-            </label>
-        </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="rememberMe" name="rememberMe" />
+                    <label class="form-check-label text-white" for="rememberMe">Remember me</label>
+                </div>
 
-        <div class="flex items-center justify-end mt-4">
-            @if (Route::has('password.request'))
-                <a class="underline text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-800" href="{{ route('password.request') }}">
-                    {{ __('Forgot your password?') }}
-                </a>
-            @endif
+                <button class="btn btn-primary">Login</button>
+            </div>
+        </form>
 
-            <x-primary-button class="ms-3">
-                {{ __('Log in') }}
-            </x-primary-button>
-        </div>
-    </form>
-</x-guest-layout>
+
+        <!-- Signup Form -->
+        <form id="signup-form" style="display: none;">
+            <div class="card-body">
+                <div class="form-group mb-3">
+                    <input type="text" class="form-control" name="username" id="name" placeholder="User Name" required>
+                </div>
+                <div class="form-group mb-3">
+                    <input type="email" class="form-control" name="email" id="signup-email" placeholder="Email" required>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group mb-3">
+                            <input type="password" class="form-control" name="password" id="signup-password" placeholder="Password" required>
+                            <!-- Toggle show password -->
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="show-signup-password" />
+                                <label class="form-check-label" for="show-signup-password">Show Password</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group mb-3">
+                            <input type="password" class="form-control" name="password_confirmation" id="signup-password-confirmation" placeholder="Confirmation Password" required>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Link to Login form -->
+                <div class="form-group text-center mb-3">
+                    <p>Already have an account? <a href="javascript:void(0);" id="show-login-form">Login</a></p>
+                </div>
+            </div>
+            <div class="card-footer bg-dark d-flex justify-content-end">
+                <button class="btn btn-primary">Signup</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@endsection
+@push('custom-scripts')
+    <script>
+        $(document).ready(function () {
+            $('#show-signup-form').click(function() {
+                $('#login-form').hide();
+                $('#signup-form').show();
+                $('#form-title').text('Signup');
+            });
+
+            $('#show-login-form').click(function() {
+                $('#signup-form').hide();
+                $('#login-form').show();
+                $('#form-title').text('Login');
+            });
+
+            $('#show-password').change(function() {
+                var passwordField = $('#password');
+                if ($(this).prop('checked')) {
+                    passwordField.attr('type', 'text');
+                } else {
+                    passwordField.attr('type', 'password');
+                }
+            });
+
+            $('#show-signup-password').change(function() {
+                var signupPasswordField = $('#signup-password');
+                if ($(this).prop('checked')) {
+                    signupPasswordField.attr('type', 'text');
+                } else {
+                    signupPasswordField.attr('type', 'password');
+                }
+            });
+        });
+    </script>
+@endpush
