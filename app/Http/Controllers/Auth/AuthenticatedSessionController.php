@@ -24,11 +24,17 @@ class AuthenticatedSessionController extends Controller
      */
     public function store(LoginRequest $request): RedirectResponse
     {
-        $request->authenticate();
+        try{
+            $request->authenticate();
 
-        $request->session()->regenerate();
+            $request->session()->regenerate();
 
-        return redirect()->intended(route('dashboard', absolute: false));
+            return redirect()->route('dashboard')->with('success', 'Logged in successfully.');
+        }catch (\Exception $e) {
+            return redirect()->back()
+                         ->withInput($request->only('email')) // retain the email field
+                         ->with('error', 'Login failed. Please check your credentials and try again.');
+        }
     }
 
     /**
@@ -42,6 +48,6 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerateToken();
 
-        return redirect('/');
+        return redirect('/login')->with('success', 'Logged out successfully.');
     }
 }

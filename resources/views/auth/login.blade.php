@@ -14,7 +14,7 @@
                 <div class="row">
                     <div class="col-md-6">
                         <div class="form-group mb-3">
-                            <input type="text" class="form-control" name="email" id="email" placeholder="Email" value="{{ old('email') }}" required>
+                            <input type="email" class="form-control" name="email" id="email" placeholder="Email" value="{{ old('email') }}" required>
                         </div>
                     </div>
                     <div class="col-md-6">
@@ -31,14 +31,15 @@
 
 
                 <!-- Link to Signup form -->
-                <div class="form-group text-center mb-3">
+                <div class="form-group text-center d-flex justify-content-between mb-3">
                     <p>Don't have an account? <a href="javascript:void(0);" id="show-signup-form">Sign up</a></p>
+                    <a href="{{ route('password.request') }}">fogot passoword?</a>
                 </div>
             </div>
             <div class="card-footer bg-dark d-flex justify-content-between">
 
                 <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="rememberMe" name="rememberMe" />
+                    <input class="form-check-input" type="checkbox" id="rememberMe" name="remember" />
                     <label class="form-check-label text-white" for="rememberMe">Remember me</label>
                 </div>
 
@@ -51,7 +52,7 @@
         <form id="signup-form" style="display: none;">
             <div class="card-body">
                 <div class="form-group mb-3">
-                    <input type="text" class="form-control" name="username" id="name" placeholder="User Name" required>
+                    <input type="text" class="form-control" name="name" id="name" placeholder="Full Name" required>
                 </div>
                 <div class="form-group mb-3">
                     <input type="email" class="form-control" name="email" id="signup-email" placeholder="Email" required>
@@ -60,7 +61,7 @@
                     <div class="col-md-6">
                         <div class="form-group mb-3">
                             <input type="password" class="form-control" name="password" id="signup-password" placeholder="Password" required>
-                            <!-- Toggle show password -->
+
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" id="show-signup-password" />
                                 <label class="form-check-label" for="show-signup-password">Show Password</label>
@@ -118,6 +119,76 @@
                 } else {
                     signupPasswordField.attr('type', 'password');
                 }
+            });
+
+            $(document).on('submit', '#signup-form', function(e) {
+                e.preventDefault();
+
+                var formData = new FormData(this);
+
+                $.ajax({
+                    type: "POST",
+                    url: "{{ route('register') }}",
+                    data: formData,
+                    dataType: "json",
+                    contentType: false,
+                    processData: false,
+                    success: function(response) {
+                        console.log(response);
+
+                        if (response.status == 200) {
+
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Success!',
+                                text: response.message,
+                                showConfirmButton: false,
+                                timer: 1500,
+                                timerProgressBar: true
+                            });
+
+                            setTimeout(function() {
+                                window.location.href = response.redirect_url;
+                            }, 2000);
+                        } else {
+
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error!',
+                                text: response.message,
+                                showConfirmButton: false,
+                                timer: 1500,
+                                timerProgressBar: true
+                            });
+                        }
+                    },
+                    error: function(xhr, status, error) {
+
+                        if (xhr.status === 422 && xhr.responseJSON && xhr.responseJSON.errors) {
+                            let errorMessage = 'Validation errors occurred:';
+
+                            $.each(xhr.responseJSON.errors, function(field, messages) {
+                                errorMessage += `\n${messages.join(', ')}`;
+                            });
+
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Validation Errors!',
+                                text: errorMessage,
+                                confirmButtonText: 'OK'
+                            });
+                        } else {
+
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Oops...',
+                                text: 'Something went wrong. Please try again.',
+                                confirmButtonText: 'OK'
+                            });
+                        }
+                    }
+                });
+
             });
         });
     </script>

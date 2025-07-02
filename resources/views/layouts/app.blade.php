@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Expence Tracker</title>
     <link rel="stylesheet" href="{{ asset('asset/bootstrap/boostrap.min.css') }}">
 </head>
@@ -12,6 +13,13 @@
     <script src="{{ asset("asset/js/jquery.min.js") }}"></script>
     <script src="{{ asset('asset/bootstrap/bootstrap.bundle.min.js') }}"></script>
     <script src="{{ asset('asset/js/sweetalert.min.js') }}"></script>
+    <script>
+        $.ajaxSetup({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            }
+        });
+    </script>
     @stack('custom-scripts')
 </body>
 </html>
