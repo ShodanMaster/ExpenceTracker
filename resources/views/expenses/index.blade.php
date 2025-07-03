@@ -33,13 +33,44 @@
                     <h1 class="modal-title fs-5" id="addModalLabel"></h1>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <form id="">
+                <form id="addForm">
+                    <input type="hidden" id="expense-date" name="expenseDate">
                     <div class="modal-body">
-                        ...
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold me-3">Type:</label>
+                            <div class="d-inline-flex gap-3 align-items-center">
+                                <div class="form-check form-check-inline m-0">
+                                    <input class="form-check-input" type="radio" name="type" id="credit" value="credit" checked required>
+                                    <label class="form-check-label" for="credit">Credit</label>
+                                </div>
+                                <div class="form-check form-check-inline m-0">
+                                    <input class="form-check-input" type="radio" name="type" id="debit" value="debit">
+                                    <label class="form-check-label" for="debit">Debit</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <div class="form-group">
+                                    <input type="text" class="form-control" id="reason" name="reason" placeholder="Reason" list="reason-list" required>
+                                    <datalist id="reason-list">
+                                        @foreach ($reasons as $reason)
+                                            <option value="{{ $reason->name }}"></option>
+                                        @endforeach
+                                    </datalist>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="form-group">
+                                    <input type="number" step="0.01" class="form-control" id="amount" name="amount" placeholder="Amount" required>
+                                </div>
+                            </div>
+                        </div>
+                        <textarea class="form-control" name="description" id="description" placeholder="Description"></textarea>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                        <button type="button" class="btn btn-primary">Save changes</button>
+                        <button type="submit" class="btn btn-primary">Save changes</button>
                     </div>
                 </form>
             </div>
@@ -53,6 +84,13 @@
     let currentDate = new Date();
     let selectedElement = null;
 
+    function formatDateToDDMMYYYY(date) {
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = date.getFullYear();
+        return `${day}-${month}-${year}`;
+    }
+
     function renderCalendar(date) {
         const calendar = document.getElementById("calendar");
         calendar.innerHTML = "";
@@ -63,7 +101,7 @@
         const daysInMonth = new Date(year, month + 1, 0).getDate();
 
         const today = new Date();
-        const todayStr = today.toLocaleDateString('en-CA'); // Format: YYYY-MM-DD
+        const todayStr = formatDateToDDMMYYYY(today);
 
         document.getElementById("monthYear").textContent =
             date.toLocaleString('default', { month: 'long', year: 'numeric' });
@@ -86,7 +124,7 @@
                 if (started && dayCounter <= daysInMonth) {
                     col.textContent = dayCounter;
                     const fullDate = new Date(year, month, dayCounter);
-                    const fullDateStr = fullDate.toLocaleDateString('en-CA');
+                    const fullDateStr = formatDateToDDMMYYYY(fullDate);
 
                     col.dataset.date = fullDateStr;
                     col.style.cursor = "pointer";
@@ -94,7 +132,7 @@
                     if (fullDateStr === todayStr && year === today.getFullYear() && month === today.getMonth()) {
                         col.classList.add("bg-primary", "text-white");
                         selectedElement = col;
-                        console.log("Selected Date:", fullDateStr);
+                        document.getElementById('addModalLabel').textContent = `Date: ${fullDateStr}`;
                     } else {
                         col.classList.add("bg-light");
                     }
@@ -104,11 +142,16 @@
                             selectedElement.classList.remove("bg-primary", "text-white");
                             selectedElement.classList.add("bg-light");
                         }
+
                         col.classList.remove("bg-light");
                         col.classList.add("bg-primary", "text-white");
                         selectedElement = col;
 
-                        console.log("Selected Date:", col.dataset.date);
+                        const selectedDateStr = col.dataset.date;
+                        const isoDate = new Date(year, month, dayCounter).toISOString();
+
+                        document.getElementById('addModalLabel').textContent = `Date: ${selectedDateStr}`;
+                        document.getElementById('expense-date').value = isoDate;
                     };
 
                     dayCounter++;
@@ -131,5 +174,61 @@
     }
 
     renderCalendar(currentDate);
+
+    document.getElementById('addForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        console.log('submitted');
+
+        const date = document.getElementById('expense-date').value || new Date().toISOString();
+        const type = document.querySelector('input[name="type"]:checked')?.value || '';
+        const reason = document.getElementById('reason').value;
+        const amount = document.getElementById('amount').value;
+        const description = document.getElementById('description').value;
+
+        axios.post('{{ route('expenses.store') }}', {
+            date: date,
+            type: type,
+            reason: reason,
+            amount: amount,
+            description: description,
+        }, {
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            }
+        })
+        .then(response => {
+            const data = response.data;
+            console.log(data);
+
+            if (data.status == 200) {
+                let message = data.message || 'Successfully Stored';
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success',
+                    text: message,
+                    showConfirmButton: false,
+                    timer: 2000,
+                    timerProgressBar: true,
+                });
+
+                bootstrap.Modal.getInstance(document.getElementById('addModal')).hide();
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Something Went Wrong',
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'An error occurred during the request.',
+            });
+        });
+    });
 </script>
 @endpush

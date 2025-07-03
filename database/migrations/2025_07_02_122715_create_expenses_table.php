@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('description')->nullable();
             $table->date('date');
             $table->foreignId('reason_id')->constrained()->onDelete('cascade');
-            $table->enum('type', ['income', 'expense']);
+            $table->enum('type', ['debit', 'credit']);
             $table->timestamps();
         });
     }
