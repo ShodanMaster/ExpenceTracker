@@ -1,24 +1,6 @@
 @extends('layouts.master')
 @section('content')
-    <h1>Expense</h1>
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <button class="btn btn-outline-primary" onclick="changeMonth(-1)">&#8592; Prev</button>
-        <h3 id="monthYear" class="mb-0"></h3>
-        <button class="btn btn-outline-primary" onclick="changeMonth(1)">Next &#8594;</button>
-    </div>
 
-    <div class="row text-center fw-bold border-bottom pb-2">
-        <div class="col">Sun</div>
-        <div class="col">Mon</div>
-        <div class="col">Tue</div>
-        <div class="col">Wed</div>
-        <div class="col">Thu</div>
-        <div class="col">Fri</div>
-        <div class="col">Sat</div>
-    </div>
-
-    <div id="calendar" class="mt-2"></div>
-    <hr>
 
     <button type="button" class="btn btn-primary rounded-circle position-fixed bottom-0 end-0 m-3 d-flex align-items-center justify-content-center" data-bs-toggle="modal" data-bs-target="#addModal">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus-lg" viewBox="0 0 16 16">
@@ -77,12 +59,55 @@
         </div>
     </div>
 
+    <h1>Expense</h1>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <button class="btn btn-outline-primary" onclick="changeMonth(-1)">&#8592; Prev</button>
+        <h3 id="monthYear" class="mb-0"></h3>
+        <button class="btn btn-outline-primary" onclick="changeMonth(1)">Next &#8594;</button>
+    </div>
+
+    <div class="row text-center fw-bold border-bottom pb-2">
+        <div class="col">Sun</div>
+        <div class="col">Mon</div>
+        <div class="col">Tue</div>
+        <div class="col">Wed</div>
+        <div class="col">Thu</div>
+        <div class="col">Fri</div>
+        <div class="col">Sat</div>
+    </div>
+
+    <div id="calendar" class="mt-2"></div>
+    <hr>
+    <div id="expense" class="d-none mt-4">
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <div class="card border-success">
+                    <div class="card-header bg-success text-white">Credits</div>
+                    <div class="card-body">
+                        <ul id="creditList" class="list-group list-group-flush"></ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card border-danger">
+                    <div class="card-header bg-danger text-white">Debits</div>
+                    <div class="card-body">
+                        <ul id="debitList" class="list-group list-group-flush"></ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
 @endsection
 
 @push('custom-scripts')
 <script>
     let currentDate = new Date();
     let selectedElement = null;
+    let formattedDate = formatDateToYYYYMMDD(currentDate);
+    fetchExpense(formattedDate);
 
     function formatDateToDDMMYYYY(date) {
         const day = String(date.getDate()).padStart(2, '0');
@@ -90,6 +115,14 @@
         const year = date.getFullYear();
         return `${day}-${month}-${year}`;
     }
+
+    function formatDateToYYYYMMDD(date) {
+        const yyyy = date.getFullYear();
+        const mm = String(date.getMonth() + 1).padStart(2, '0');
+        const dd = String(date.getDate()).padStart(2, '0');
+        return `${yyyy}-${mm}-${dd}`;
+    }
+
 
     function renderCalendar(date) {
         const calendar = document.getElementById("calendar");
@@ -137,6 +170,8 @@
                         col.classList.add("bg-light");
                     }
 
+                    const currentDay = dayCounter;
+
                     col.onclick = function () {
                         if (selectedElement) {
                             selectedElement.classList.remove("bg-primary", "text-white");
@@ -147,11 +182,18 @@
                         col.classList.add("bg-primary", "text-white");
                         selectedElement = col;
 
-                        const selectedDateStr = col.dataset.date;
-                        const isoDate = new Date(year, month, dayCounter).toISOString();
+                        const selectedDate = new Date(year, month, currentDay); // ✅ Correct scoped day
+                        const formattedDate = formatDateToYYYYMMDD(selectedDate);
+                        const displayDate = formatDateToDDMMYYYY(selectedDate);
 
-                        document.getElementById('addModalLabel').textContent = `Date: ${selectedDateStr}`;
-                        document.getElementById('expense-date').value = isoDate;
+                        console.log("SelectedDate: " + selectedDate);
+                        console.log("formattedDate: " + formattedDate);
+                        console.log("displayDate: " + displayDate);
+
+                        document.getElementById('addModalLabel').textContent = `Date: ${displayDate}`;
+                        document.getElementById('expense-date').value = formattedDate;
+
+                        fetchExpense(formattedDate);
                     };
 
                     dayCounter++;
@@ -175,16 +217,77 @@
 
     renderCalendar(currentDate);
 
+    function fetchExpense(date) {
+        console.log('inside: '+ date);
+
+        axios.get('/get-expenses/' + date)
+            .then(response => {
+                const res = response.data;
+
+                if (res.status === 200) {
+                    const data = res.data;
+
+                    const debitList = data.debit || [];
+                    const creditList = data.credit || [];
+
+                    if (creditList.length === 0) {
+                        document.getElementById('creditList').innerHTML =
+                            `<li class="list-group-item text-center text-muted">No Credit Data</li>`;
+                    } else {
+                        document.getElementById('creditList').innerHTML = creditList.map(item =>
+                            `<li class="list-group-item d-flex justify-content-between">
+                                <span>${item.reason}</span>
+                                <span class="text-success fw-semibold">₹${item.amount}</span>
+                            </li>`
+                        ).join('');
+                    }
+
+                    if (debitList.length === 0) {
+                        document.getElementById('debitList').innerHTML =
+                            `<li class="list-group-item text-center text-muted">No Debit Data</li>`;
+                    } else {
+                        document.getElementById('debitList').innerHTML = debitList.map(item =>
+                            `<li class="list-group-item d-flex justify-content-between">
+                                <span>${item.reason}</span>
+                                <span class="text-danger fw-semibold">₹${item.amount}</span>
+                            </li>`
+                        ).join('');
+                    }
+
+                    document.getElementById('expense').classList.remove('d-none');
+                } else {
+                    document.getElementById('creditList').innerHTML =
+                        `<li class="list-group-item text-center text-muted">No Credit Data</li>`;
+                    document.getElementById('debitList').innerHTML =
+                        `<li class="list-group-item text-center text-muted">No Debit Data</li>`;
+                }
+
+                document.getElementById('expense').classList.remove('d-none');
+            })
+            .catch(error => {
+                console.error("Error fetching expenses:", error);
+
+                document.getElementById('creditList').innerHTML =
+                    `<li class="list-group-item text-center text-muted">Error loading Credit Data</li>`;
+                document.getElementById('debitList').innerHTML =
+                    `<li class="list-group-item text-center text-muted">Error loading Debit Data</li>`;
+
+                document.getElementById('expense').classList.remove('d-none');
+            });
+    }
+
     document.getElementById('addForm').addEventListener('submit', function(e) {
         e.preventDefault();
 
-        console.log('submitted');
+        console.log("jibhuvgycftxdr "+new Date);
 
-        const date = document.getElementById('expense-date').value || new Date().toISOString();
+        const date = document.getElementById('expense-date').value || formatDateToYYYYMMDD(new Date);
         const type = document.querySelector('input[name="type"]:checked')?.value || '';
         const reason = document.getElementById('reason').value;
         const amount = document.getElementById('amount').value;
         const description = document.getElementById('description').value;
+
+        console.log(date);
 
         axios.post('{{ route('expenses.store') }}', {
             date: date,
@@ -213,6 +316,15 @@
                 });
 
                 bootstrap.Modal.getInstance(document.getElementById('addModal')).hide();
+
+                document.getElementById('addForm').reset();
+                document.getElementById('credit').checked = true;
+
+                const selectedDate = date;
+                console.log("submitted Date: " + selectedDate);
+
+                fetchExpense(selectedDate);
+
             } else {
                 Swal.fire({
                     icon: 'error',
@@ -230,5 +342,25 @@
             });
         });
     });
+
+    document.querySelector('[data-bs-target="#addModal"]').addEventListener('click', function () {
+        const label = document.getElementById('addModalLabel');
+        // const input = document.getElementById('expense-date');
+
+        if (selectedElement && selectedElement.dataset.date) {
+            const parts = selectedElement.dataset.date.split('-');
+
+            const selectedDate = new Date(parseInt(parts[2]), parseInt(parts[1]) + 1, parseInt(parts[0]));
+
+            label.textContent = `Date: ${selectedElement.dataset.date}`;
+            // input.value = selectedDate.toISOString().split('T')[0];
+        } else {
+            const today = new Date();
+            const todayStr = formatDateToDDMMYYYY(today);
+            label.textContent = `Date: ${todayStr}`;
+            // input.value = today.toISOString().split('T')[0];
+        }
+    });
+
 </script>
 @endpush

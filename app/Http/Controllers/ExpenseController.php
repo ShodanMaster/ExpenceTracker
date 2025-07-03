@@ -35,7 +35,7 @@ class ExpenseController extends Controller
      */
     public function store(Request $request)
     {
-
+        // dd($request->all());
         try{
             $request->validate([
                 'date' => 'required|string',
@@ -52,11 +52,11 @@ class ExpenseController extends Controller
                 $reason = $existing;
             }
 
-            $date = Carbon::parse($request->date)->setTimezone('America/New_York');
-            
+            // $date = Carbon::parse($request->date)->setTimezone('America/New_York');
+
             $expense  = Expense::create([
                 'user_id' => auth()->id(),
-                'date' => $date,
+                'date' => $request->date,
                 'type' => $request->type,
                 'reason_id' => $reason->id,
                 'amount' => $request->amount,
@@ -88,6 +88,42 @@ class ExpenseController extends Controller
             ], 500);
         }
 
+    }
+
+    public function getExpenses($date){
+        // dd($date);
+        try{
+
+            $debitExpenses = Expense::whereDate('date', $date)->where('type', 'debit')->get()->map(function($de){
+                return [
+                    'reason' => $de->reason->name,
+                    'amount' => $de->amount,
+                ];
+            });
+            $creditExpenses = Expense::whereDate('date', $date)->where('type', 'credit')->get()->map(function($ce){
+                return [
+                    'reason' => $ce->reason->name,
+                    'amount' => $ce->amount,
+                ];
+            });
+
+            $data = [
+                'debit' => $debitExpenses,
+                'credit' => $creditExpenses,
+            ];
+
+            // dd($data['credit'][0]['reason']);
+            return response()->json([
+                'status' => 200,
+                'date' => $date,
+                'debit_count' => $debitExpenses->count(),
+                'credit_count' => $creditExpenses->count(),
+                'data' => $data,
+            ]);
+
+        }catch(Exception $e){
+            dd($e);
+        }
     }
 
     /**

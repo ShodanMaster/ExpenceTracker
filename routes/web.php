@@ -17,6 +17,8 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     Route::resource('expenses', ExpenseController::class);
+    Route::get('get-expenses/{date}', [ExpenseController::class, 'getExpenses'])->name('getexpenses');
+
 });
 
 require __DIR__.'/auth.php';

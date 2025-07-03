@@ -14,4 +14,8 @@ class Expense extends Model
         'reason_id',
         'type',
     ];
+
+    public function reason(){
+        return $this->belongsTo(Reason::class);
+    }
 }
