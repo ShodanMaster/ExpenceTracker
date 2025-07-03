@@ -20,26 +20,28 @@
     <div id="calendar" class="mt-2"></div>
     <hr>
 
-    <!-- Button trigger modal -->
-    <button type="button" class="btn btn-primary position-fixed top-3 end-0 m-3" style="z-index: 1;" data-bs-toggle="modal" data-bs-target="#exampleModal">
-    Launch demo modal
+    <button type="button" class="btn btn-primary rounded-circle position-fixed bottom-0 end-0 m-3 d-flex align-items-center justify-content-center" data-bs-toggle="modal" data-bs-target="#addModal">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus-lg" viewBox="0 0 16 16">
+            <path fill-rule="evenodd" d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2"/>
+        </svg>
     </button>
 
-    <!-- Modal -->
-    <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal fade" id="addModal" tabindex="-1" aria-labelledby="addModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
-            <div class="modal-header">
-                <h1 class="modal-title fs-5" id="exampleModalLabel">Modal title</h1>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                ...
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary">Save changes</button>
-            </div>
+                <div class="modal-header text-center">
+                    <h1 class="modal-title fs-5" id="addModalLabel"></h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="">
+                    <div class="modal-body">
+                        ...
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-primary">Save changes</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -92,7 +94,7 @@
                     if (fullDateStr === todayStr && year === today.getFullYear() && month === today.getMonth()) {
                         col.classList.add("bg-primary", "text-white");
                         selectedElement = col;
-                        console.log("Selected Date:", fullDateStr); // ✅ Logs today on load
+                        console.log("Selected Date:", fullDateStr);
                     } else {
                         col.classList.add("bg-light");
                     }
@@ -106,7 +108,7 @@
                         col.classList.add("bg-primary", "text-white");
                         selectedElement = col;
 
-                        console.log("Selected Date:", col.dataset.date); // ✅ Logs selected date on click
+                        console.log("Selected Date:", col.dataset.date);
                     };
 
                     dayCounter++;

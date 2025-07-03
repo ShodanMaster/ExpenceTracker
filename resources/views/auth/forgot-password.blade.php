@@ -43,7 +43,7 @@
 
             </div>
             <div class="card-footer bg-dark d-flex justify-content-between">
-                <a href="{{route('login')}}">Login</a>
+                <a class="text-decoration-none text-white" href="{{route('login')}}">Login</a>
                 <button type="submit" class="btn btn-primary">
                     {{ __('Email Password Reset Link') }}
                 </button>
@@ -52,3 +52,16 @@
     </div>
 </div>
 @endsection
+@push('custom-scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const form = document.querySelector('form[action="{{ route('password.email') }}"]');
+            const submitButton = form.querySelector('button[type="submit"]');
+
+            form.addEventListener('submit', function () {
+                submitButton.disabled = true;
+                submitButton.textContent = 'Sending...';
+            });
+        });
+    </script>
+@endpush

@@ -81,7 +81,7 @@
                 </div>
             </div>
             <div class="card-footer bg-dark d-flex justify-content-end">
-                <button class="btn btn-primary">Signup</button>
+                <button type="submit" class="btn btn-primary">Signup</button>
             </div>
         </form>
     </div>
@@ -90,86 +90,76 @@
 @endsection
 @push('custom-scripts')
     <script>
-        $(document).ready(function () {
-            $('#show-signup-form').click(function() {
-                $('#login-form').hide();
-                $('#signup-form').show();
-                $('#form-title').text('Signup');
+        document.addEventListener('DOMContentLoaded', function () {
+
+            document.getElementById('show-signup-form').addEventListener('click', function () {
+                document.getElementById('login-form').style.display = 'none';
+                document.getElementById('signup-form').style.display = 'block';
+                document.getElementById('form-title').textContent = 'Signup';
             });
 
-            $('#show-login-form').click(function() {
-                $('#signup-form').hide();
-                $('#login-form').show();
-                $('#form-title').text('Login');
+            document.getElementById('show-login-form').addEventListener('click', function () {
+                document.getElementById('signup-form').style.display = 'none';
+                document.getElementById('login-form').style.display = 'block';
+                document.getElementById('form-title').textContent = 'Login';
             });
 
-            $('#show-password').change(function() {
-                var passwordField = $('#password');
-                if ($(this).prop('checked')) {
-                    passwordField.attr('type', 'text');
-                } else {
-                    passwordField.attr('type', 'password');
-                }
+            document.getElementById('show-password').addEventListener('change', function () {
+                const passwordField = document.getElementById('password');
+                passwordField.type = this.checked ? 'text' : 'password';
             });
 
-            $('#show-signup-password').change(function() {
-                var signupPasswordField = $('#signup-password');
-                if ($(this).prop('checked')) {
-                    signupPasswordField.attr('type', 'text');
-                } else {
-                    signupPasswordField.attr('type', 'password');
-                }
+            document.getElementById('show-signup-password').addEventListener('change', function () {
+                const passwordField = document.getElementById('signup-password');
+                passwordField.type = this.checked ? 'text' : 'password';
             });
 
-            $(document).on('submit', '#signup-form', function(e) {
+            document.getElementById('signup-form').addEventListener('submit', function (e) {
                 e.preventDefault();
 
-                var formData = new FormData(this);
+                const form = this;
+                const formData = new FormData(form);
+                const submitButton = form.querySelector('button[type="submit"]');
 
-                $.ajax({
-                    type: "POST",
-                    url: "{{ route('register') }}",
-                    data: formData,
-                    dataType: "json",
-                    contentType: false,
-                    processData: false,
-                    success: function(response) {
-                        console.log(response);
+                submitButton.disabled = true;
+                submitButton.textContent = 'Submitting...';
 
-                        if (response.status == 200) {
+                axios.post("{{ route('register') }}", formData)
+                    .then(response => {
+                        const res = response.data;
 
+                        if (res.status == 200) {
                             Swal.fire({
                                 icon: 'success',
                                 title: 'Success!',
-                                text: response.message,
+                                text: res.message,
                                 showConfirmButton: false,
                                 timer: 1500,
                                 timerProgressBar: true
                             });
 
-                            setTimeout(function() {
-                                window.location.href = response.redirect_url;
+                            setTimeout(() => {
+                                window.location.href = res.redirect_url;
                             }, 2000);
                         } else {
-
                             Swal.fire({
                                 icon: 'error',
                                 title: 'Error!',
-                                text: response.message,
+                                text: res.message,
                                 showConfirmButton: false,
                                 timer: 1500,
                                 timerProgressBar: true
                             });
                         }
-                    },
-                    error: function(xhr, status, error) {
-
-                        if (xhr.status === 422 && xhr.responseJSON && xhr.responseJSON.errors) {
+                    })
+                    .catch(error => {
+                        if (error.response && error.response.status === 422 && error.response.data.errors) {
                             let errorMessage = 'Validation errors occurred:';
+                            const errors = error.response.data.errors;
 
-                            $.each(xhr.responseJSON.errors, function(field, messages) {
-                                errorMessage += `\n${messages.join(', ')}`;
-                            });
+                            for (const field in errors) {
+                                errorMessage += `\n${errors[field].join(', ')}`;
+                            }
 
                             Swal.fire({
                                 icon: 'error',
@@ -178,7 +168,6 @@
                                 confirmButtonText: 'OK'
                             });
                         } else {
-
                             Swal.fire({
                                 icon: 'error',
                                 title: 'Oops...',
@@ -186,10 +175,15 @@
                                 confirmButtonText: 'OK'
                             });
                         }
-                    }
-                });
-
+                    })
+                    .finally(() => {
+                        
+                        submitButton.disabled = false;
+                        submitButton.textContent = 'Sign Up';
+                    });
             });
+
         });
     </script>
+
 @endpush
