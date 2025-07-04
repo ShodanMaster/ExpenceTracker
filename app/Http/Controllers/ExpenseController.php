@@ -94,20 +94,33 @@ class ExpenseController extends Controller
         // dd($date);
         try{
 
-            $debitExpenses = Expense::whereDate('date', $date)->where('type', 'debit')->get()->map(function($de){
-                return [
-                    'id' => $de->id,
-                    'reason' => $de->reason->name,
-                    'amount' => $de->amount,
-                ];
-            });
-            $creditExpenses = Expense::whereDate('date', $date)->where('type', 'credit')->get()->map(function($ce){
-                return [
-                    'id' => $ce->id,
-                    'reason' => $ce->reason->name,
-                    'amount' => $ce->amount,
-                ];
-            });
+            $debitExpenses = Expense::where('user_id', auth()->id())
+                                ->whereDate('date', $date)
+                                ->where('type', 'debit')
+                                ->get()->map(function($de){
+                                    return [
+                                        'id' => $de->id,
+                                        'reason' => $de->reason->name,
+                                        'amount' => $de->amount,
+                                        'type' => $de->type,
+                                        'date' => $de->date,
+                                        'description' => $de->description,
+                                    ];
+                                });
+
+            $creditExpenses = Expense::where('user_id', auth()->id())
+                                ->whereDate('date', $date)
+                                ->where('type', 'credit')
+                                ->get()->map(function($ce){
+                                    return [
+                                        'id' => $ce->id,
+                                        'reason' => $ce->reason->name,
+                                        'amount' => $ce->amount,
+                                        'type' => $ce->type,
+                                        'date' => $ce->date,
+                                        'description' => $ce->description,
+                                    ];
+                                });
 
             $data = [
                 'debit' => $debitExpenses,
@@ -117,7 +130,6 @@ class ExpenseController extends Controller
             return response()->json([
                 'status' => 200,
                 'date' => date('d-m-Y', strtotime($date)),
-                // 'date' => $date,
                 'debit_count' => $debitExpenses->count(),
                 'credit_count' => $creditExpenses->count(),
                 'data' => $data,
