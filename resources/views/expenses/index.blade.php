@@ -462,5 +462,7 @@
         document.getElementById('edit-amount').value = amount;
         document.getElementById('edit-description').value = description ?? '';
     }
+
+    
 </script>
 @endpush
