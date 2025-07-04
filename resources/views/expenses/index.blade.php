@@ -78,22 +78,34 @@
 
     <div id="calendar" class="mt-2"></div>
     <hr>
-    <div id="expense" class="d-none mt-4">
-        <div class="row">
-            <div class="col-md-6 mb-3">
-                <div class="card border-success">
-                    <div class="card-header bg-success text-white">Credits</div>
-                    <div class="card-body">
-                        <ul id="creditList" class="list-group list-group-flush"></ul>
+    <div class="card d-none mt-4" id="expense">
+        <div class="card-header text-white text-center bg-dark fs-4 d-flex justify-content-between">
+            <span id="title-expense-date"></span>
+            <span id="total-transcations"></span>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <div class="card border-success">
+                        <div class="card-header bg-success text-white d-flex justify-content-between">
+                            Credits
+                            <span id="total-credits"></span>
+                        </div>
+                        <div class="card-body">
+                            <ul id="creditList" class="list-group list-group-flush"></ul>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <div class="col-md-6">
-                <div class="card border-danger">
-                    <div class="card-header bg-danger text-white">Debits</div>
-                    <div class="card-body">
-                        <ul id="debitList" class="list-group list-group-flush"></ul>
+                <div class="col-md-6">
+                    <div class="card border-danger">
+                        <div class="card-header bg-danger text-white d-flex justify-content-between">
+                            Debits
+                            <span id="total-debits"></span>
+                        </div>
+                        <div class="card-body">
+                            <ul id="debitList" class="list-group list-group-flush"></ul>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -182,13 +194,9 @@
                         col.classList.add("bg-primary", "text-white");
                         selectedElement = col;
 
-                        const selectedDate = new Date(year, month, currentDay); // ✅ Correct scoped day
+                        const selectedDate = new Date(year, month, currentDay);
                         const formattedDate = formatDateToYYYYMMDD(selectedDate);
                         const displayDate = formatDateToDDMMYYYY(selectedDate);
-
-                        console.log("SelectedDate: " + selectedDate);
-                        console.log("formattedDate: " + formattedDate);
-                        console.log("displayDate: " + displayDate);
 
                         document.getElementById('addModalLabel').textContent = `Date: ${displayDate}`;
                         document.getElementById('expense-date').value = formattedDate;
@@ -218,14 +226,20 @@
     renderCalendar(currentDate);
 
     function fetchExpense(date) {
-        console.log('inside: '+ date);
 
         axios.get('/get-expenses/' + date)
             .then(response => {
                 const res = response.data;
+                console.log(res);
+                console.log(res.date);
 
                 if (res.status === 200) {
                     const data = res.data;
+
+                    document.getElementById('title-expense-date').textContent = "Date: " + res.date;
+                    document.getElementById('total-transcations').textContent = "Total Transactions: " + (res.credit_count + res.debit_count);
+                    document.getElementById('total-credits').textContent = "Total Credits: " + res.credit_count;
+                    document.getElementById('total-debits').textContent = "Total Debits: " + res.debit_count;
 
                     const debitList = data.debit || [];
                     const creditList = data.credit || [];
@@ -234,10 +248,26 @@
                         document.getElementById('creditList').innerHTML =
                             `<li class="list-group-item text-center text-muted">No Credit Data</li>`;
                     } else {
-                        document.getElementById('creditList').innerHTML = creditList.map(item =>
-                            `<li class="list-group-item d-flex justify-content-between">
-                                <span>${item.reason}</span>
-                                <span class="text-success fw-semibold">₹${item.amount}</span>
+
+                        document.getElementById('creditList').innerHTML = creditList.map((item, index) =>
+                            `<li class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span>${item.reason}</span>
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="text-success fw-semibold">₹${item.amount}</span>
+                                    <button class="btn btn-sm btn-outline-secondary" onclick="editCredit(${index})">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pencil" viewBox="0 0 16 16">
+                                            <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325"/>
+                                        </svg>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteCredit(${index})">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16">
+                                            <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/>
+                                            <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z"/>
+                                        </svg>
+                                    </button>
+                                </div>
                             </li>`
                         ).join('');
                     }
@@ -246,10 +276,25 @@
                         document.getElementById('debitList').innerHTML =
                             `<li class="list-group-item text-center text-muted">No Debit Data</li>`;
                     } else {
-                        document.getElementById('debitList').innerHTML = debitList.map(item =>
-                            `<li class="list-group-item d-flex justify-content-between">
-                                <span>${item.reason}</span>
-                                <span class="text-danger fw-semibold">₹${item.amount}</span>
+                        document.getElementById('debitList').innerHTML = debitList.map((item, index) =>
+                            `<li class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span>${item.reason}</span>
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="text-danger fw-semibold">₹${item.amount}</span>
+                                    <button class="btn btn-sm btn-outline-secondary" onclick="editDebit(${index})">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pencil" viewBox="0 0 16 16">
+                                            <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325"/>
+                                        </svg>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteDebit(${index})">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16">
+                                            <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/>
+                                            <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z"/>
+                                        </svg>
+                                    </button>
+                                </div>
                             </li>`
                         ).join('');
                     }
@@ -279,15 +324,11 @@
     document.getElementById('addForm').addEventListener('submit', function(e) {
         e.preventDefault();
 
-        console.log("jibhuvgycftxdr "+new Date);
-
         const date = document.getElementById('expense-date').value || formatDateToYYYYMMDD(new Date);
         const type = document.querySelector('input[name="type"]:checked')?.value || '';
         const reason = document.getElementById('reason').value;
         const amount = document.getElementById('amount').value;
         const description = document.getElementById('description').value;
-
-        console.log(date);
 
         axios.post('{{ route('expenses.store') }}', {
             date: date,
@@ -302,7 +343,6 @@
         })
         .then(response => {
             const data = response.data;
-            console.log(data);
 
             if (data.status == 200) {
                 let message = data.message || 'Successfully Stored';
@@ -321,7 +361,6 @@
                 document.getElementById('credit').checked = true;
 
                 const selectedDate = date;
-                console.log("submitted Date: " + selectedDate);
 
                 fetchExpense(selectedDate);
 
@@ -345,7 +384,6 @@
 
     document.querySelector('[data-bs-target="#addModal"]').addEventListener('click', function () {
         const label = document.getElementById('addModalLabel');
-        // const input = document.getElementById('expense-date');
 
         if (selectedElement && selectedElement.dataset.date) {
             const parts = selectedElement.dataset.date.split('-');
@@ -353,12 +391,10 @@
             const selectedDate = new Date(parseInt(parts[2]), parseInt(parts[1]) + 1, parseInt(parts[0]));
 
             label.textContent = `Date: ${selectedElement.dataset.date}`;
-            // input.value = selectedDate.toISOString().split('T')[0];
         } else {
             const today = new Date();
             const todayStr = formatDateToDDMMYYYY(today);
             label.textContent = `Date: ${todayStr}`;
-            // input.value = today.toISOString().split('T')[0];
         }
     });
 
