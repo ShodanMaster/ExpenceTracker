@@ -215,6 +215,20 @@ class ExpenseController extends Controller
      */
     public function destroy(string $id)
     {
-        //
+        try {
+            $expense = Expense::findOrFail($id);
+            $expense->delete();
+
+            return response()->json([
+                'status' => 200,
+                'message' => 'Expense deleted successfully',
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'status' => 500,
+                'message' => 'Failed to delete expense',
+            ]);
+        }
     }
+
 }

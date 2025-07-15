@@ -12,9 +12,9 @@
     <div class="modal fade" id="addModal" tabindex="-1" aria-labelledby="addModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
-                <div class="modal-header text-center">
+                <div class="modal-header bg-dark text-white">
                     <h1 class="modal-title fs-5" id="addModalLabel"></h1>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close text-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <form id="addForm">
                     <input type="hidden" id="expense-date" name="expenseDate">
@@ -23,11 +23,11 @@
                             <label class="form-label fw-semibold me-3">Type:</label>
                             <div class="d-inline-flex gap-3 align-items-center">
                                 <div class="form-check form-check-inline m-0">
-                                    <input class="form-check-input" type="radio" name="type" id="credit" value="credit" checked required>
+                                    <input class="form-check-input" type="radio" name="type" id="credit" value="credit" required>
                                     <label class="form-check-label" for="credit">Credit</label>
                                 </div>
                                 <div class="form-check form-check-inline m-0">
-                                    <input class="form-check-input" type="radio" name="type" id="debit" value="debit">
+                                    <input class="form-check-input" type="radio" name="type" id="debit" value="debit" checked>
                                     <label class="form-check-label" for="debit">Debit</label>
                                 </div>
                             </div>
@@ -51,7 +51,7 @@
                         </div>
                         <textarea class="form-control" name="description" id="description" placeholder="Description"></textarea>
                     </div>
-                    <div class="modal-footer">
+                    <div class="modal-footer bg-dark">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                         <button type="submit" class="btn btn-primary">Save changes</button>
                     </div>
@@ -64,7 +64,7 @@
     <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
-                <div class="modal-header">
+                <div class="modal-header bg-dark text-white">
                     <h1 class="modal-title fs-5" id="editModalLabel"></h1>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
@@ -104,7 +104,7 @@
                         </div>
                         <textarea class="form-control" name="description" id="edit-description" placeholder="Description"></textarea>
                     </div>
-                    <div class="modal-footer">
+                    <div class="modal-footer bg-dark">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                         <button type="submit" class="btn btn-primary">Update changes</button>
                     </div>
@@ -315,7 +315,7 @@
                                             <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325"/>
                                         </svg>
                                     </button>
-                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteCredit(${item.id})">
+                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteExpense(${item.id})">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16">
                                             <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/>
                                             <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z"/>
@@ -342,7 +342,7 @@
                                             <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325"/>
                                         </svg>
                                     </button>
-                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteDebit(${item.id})">
+                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteExpense(${item.id})">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16">
                                             <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/>
                                             <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z"/>
@@ -527,6 +527,59 @@
             });
         });
     });
+
+    function deleteExpense(id) {
+        Swal.fire({
+            title: 'Are you sure delete this expense?',
+            text: "This action cannot be undone!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Yes, delete it!',
+            cancelButtonText: 'Cancel',
+        }).then((result) => {
+            if (result.isConfirmed) {
+                axios.delete(`/expenses/${id}`, {
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    }
+                })
+                .then(response => {
+                    const data = response.data;
+
+                    if (data.status === 200) {
+                        let message = data.message || 'Successfully deleted';
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Deleted',
+                            text: message,
+                            showConfirmButton: false,
+                            timer: 2000,
+                            timerProgressBar: true,
+                        });
+
+                        const selectedDate = document.getElementById('expense-date')?.value || formatDateToYYYYMMDD(new Date);
+                        fetchExpense(selectedDate);
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'Something went wrong.',
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'An error occurred during the request.',
+                    });
+                });
+            }
+        });
+    }
 
 </script>
 @endpush
