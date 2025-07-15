@@ -61,54 +61,54 @@
     </div>
 
     <!-- Edit Modal -->
-    <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
+    <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
-            <div class="modal-header">
-                <h1 class="modal-title fs-5" id="exampleModalLabel">Modal title</h1>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form id="addForm">
-                <input type="hidden" id="edit-expense-date" name="expenseDate">
-                <input type="hidden" id="expense-id" name="expenseId">
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold me-3">Type:</label>
-                        <div class="d-inline-flex gap-3 align-items-center">
-                            <div class="form-check form-check-inline m-0">
-                                <input class="form-check-input" type="radio" name="type" id="edit-credit" value="credit" checked required>
-                                <label class="form-check-label" for="credit">Credit</label>
-                            </div>
-                            <div class="form-check form-check-inline m-0">
-                                <input class="form-check-input" type="radio" name="type" id="edit-debit" value="debit">
-                                <label class="form-check-label" for="debit">Debit</label>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <div class="form-group">
-                                <input type="text" class="form-control" id="edit-reason" name="reason" placeholder="Reason" list="reason-list" required>
-                                <datalist id="reason-list">
-                                    @foreach ($reasons as $reason)
-                                        <option value="{{ $reason->name }}"></option>
-                                    @endforeach
-                                </datalist>
-                            </div>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <div class="form-group">
-                                <input type="number" step="0.01" class="form-control" id="edit-amount" name="amount" placeholder="Amount" required>
-                            </div>
-                        </div>
-                    </div>
-                    <textarea class="form-control" name="description" id="edit-description" placeholder="Description"></textarea>
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="editModalLabel"></h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="submit" class="btn btn-primary">Update changes</button>
-                </div>
-            </form>
+                <form id="editForm">
+                    <input type="hidden" id="edit-expense-date" name="expenseDate">
+                    <input type="hidden" id="expense-id" name="expenseId">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold me-3">Type:</label>
+                            <div class="d-inline-flex gap-3 align-items-center">
+                                <div class="form-check form-check-inline m-0">
+                                    <input class="form-check-input" type="radio" name="edit-type" id="edit-credit" value="credit" checked required>
+                                    <label class="form-check-label" for="edit-credit">Credit</label>
+                                </div>
+                                <div class="form-check form-check-inline m-0">
+                                    <input class="form-check-input" type="radio" name="edit-type" id="edit-debit" value="debit">
+                                    <label class="form-check-label" for="edit-debit">Debit</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <div class="form-group">
+                                    <input type="text" class="form-control" id="edit-reason" name="reason" placeholder="Reason" list="reason-list" required>
+                                    <datalist id="reason-list">
+                                        @foreach ($reasons as $reason)
+                                            <option value="{{ $reason->name }}"></option>
+                                        @endforeach
+                                    </datalist>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="form-group">
+                                    <input type="number" step="0.01" class="form-control" id="edit-amount" name="amount" placeholder="Amount" required>
+                                </div>
+                            </div>
+                        </div>
+                        <textarea class="form-control" name="description" id="edit-description" placeholder="Description"></textarea>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Update changes</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -232,6 +232,7 @@
                         col.classList.add("bg-primary", "text-white");
                         selectedElement = col;
                         document.getElementById('addModalLabel').textContent = `Date: ${fullDateStr}`;
+                        document.getElementById('editModalLabel').textContent = `Date: ${fullDateStr}`;
                     } else {
                         col.classList.add("bg-light");
                     }
@@ -253,6 +254,7 @@
                         const displayDate = formatDateToDDMMYYYY(selectedDate);
 
                         document.getElementById('addModalLabel').textContent = `Date: ${displayDate}`;
+                        document.getElementById('editModalLabel').textContent = `Date: ${displayDate}`;
                         document.getElementById('expense-date').value = formattedDate;
 
                         fetchExpense(formattedDate);
@@ -284,8 +286,6 @@
         axios.get('/get-expenses/' + date)
             .then(response => {
                 const res = response.data;
-                console.log(res);
-                console.log(res.date);
 
                 if (res.status === 200) {
                     const data = res.data;
@@ -310,7 +310,7 @@
                                 </div>
                                 <div class="d-flex align-items-center gap-2">
                                     <span class="text-success fw-semibold">₹${item.amount}</span>
-                                    <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#exampleModal" onclick="editExpense(${item.id}, ${item.amount}, '${item.reason}', ${JSON.stringify(item.description)}, '${item.type}', '${item.date}')">
+                                    <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editModal" onclick="editExpense(${item.id}, ${item.amount}, '${item.reason}', ${JSON.stringify(item.description)}, '${item.type}', '${item.date}')">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pencil" viewBox="0 0 16 16">
                                             <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325"/>
                                         </svg>
@@ -337,7 +337,7 @@
                                 </div>
                                 <div class="d-flex align-items-center gap-2">
                                     <span class="text-danger fw-semibold">₹${item.amount}</span>
-                                    <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#exampleModal" onclick="editExpense(${item.id}, ${item.amount}, '${item.reason}', ${JSON.stringify(item.description)}, '${item.type}', '${item.date}')">
+                                    <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editModal" onclick="editExpense(${item.id}, ${item.amount}, '${item.reason}', ${JSON.stringify(item.description)}, '${item.type}', '${item.date}')">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pencil" viewBox="0 0 16 16">
                                             <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325"/>
                                         </svg>
@@ -412,7 +412,7 @@
                 bootstrap.Modal.getInstance(document.getElementById('addModal')).hide();
 
                 document.getElementById('addForm').reset();
-                document.getElementById('credit').checked = true;
+                document.getElementById('debit').checked = true;
 
                 const selectedDate = date;
 
@@ -453,7 +453,9 @@
     });
 
     function editExpense(id, amount, reason, description, type, date){
+
         document.getElementById('expense-id').value = id;
+
         document.getElementById('edit-expense-date').value = date;
 
         type === 'credit' ? document.getElementById('edit-credit').checked = true : document.getElementById('edit-debit').checked = true;
@@ -463,6 +465,68 @@
         document.getElementById('edit-description').value = description ?? '';
     }
 
-    
+    document.getElementById('editForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const id = document.getElementById('expense-id').value;
+        const date = document.getElementById('expense-date').value || formatDateToYYYYMMDD(new Date);
+        const type = document.querySelector('input[name="edit-type"]:checked')?.value || '';
+        const reason = document.getElementById('edit-reason').value;
+        const amount = document.getElementById('edit-amount').value;
+        const description = document.getElementById('edit-description').value;
+
+        axios.put(`/expenses/${id}`, {
+            id: id,
+            date: date,
+            type: type,
+            reason: reason,
+            amount: amount,
+            description: description,
+        }, {
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            }
+        })
+        .then(response => {
+            const data = response.data;
+
+            if (data.status == 200) {
+                let message = data.message || 'Successfully Updated';
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success',
+                    text: message,
+                    showConfirmButton: false,
+                    timer: 2000,
+                    timerProgressBar: true,
+                });
+
+                bootstrap.Modal.getInstance(document.getElementById('editModal')).hide();
+
+                document.getElementById('editForm').reset();
+                document.getElementById('edit-debit').checked = true;
+
+                const selectedDate = date;
+
+                fetchExpense(selectedDate);
+
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Something Went Wrong',
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'An error occurred during the request.',
+            });
+        });
+    });
+
 </script>
 @endpush
