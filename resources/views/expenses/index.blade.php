@@ -113,7 +113,14 @@
         </div>
     </div>
 
-    <h1>Expense</h1>
+    <div class="d-flex justify-content-between">
+        <h1>Expense</h1>
+        <div>
+            <h3>Balance:
+                <strong id="balance"></strong>
+            </h3>
+        </div>
+    </div>
     <div class="d-flex justify-content-between align-items-center mb-3">
         <button class="btn btn-outline-primary" onclick="changeMonth(-1)">&#8592; Prev</button>
         <h3 id="monthYear" class="mb-0"></h3>
@@ -290,6 +297,7 @@
                 if (res.status === 200) {
                     const data = res.data;
 
+                    document.getElementById('balance').textContent = data.balance;
                     document.getElementById('title-expense-date').textContent = "Date: " + res.date;
                     document.getElementById('total-transcations').textContent = "Total Transactions: " + (res.credit_count + res.debit_count);
                     document.getElementById('total-credits').textContent = "Total Credits: " + res.credit_count;

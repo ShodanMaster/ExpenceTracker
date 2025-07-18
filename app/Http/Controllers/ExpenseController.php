@@ -119,9 +119,23 @@ class ExpenseController extends Controller
                                     ];
                                 });
 
+            $credit = Expense::where('user_id', auth()->id())
+                                ->whereDate('date', '<=',$date)
+                                ->where('type', 'credit')->get();
+
+            $debit = Expense::where('user_id', auth()->id())
+                                ->whereDate('date', '<=',$date)
+                                ->where('type', 'debit')->get();
+
+            $credit_sum = $credit->sum('amount');
+            $debit_sum = $debit->sum('amount');
+
+            $balance = $this->formatIndianNumber($credit_sum - $debit_sum);
+
             $data = [
                 'debit' => $debitExpenses,
                 'credit' => $creditExpenses,
+                'balance' => $balance,
             ];
 
             return response()->json([
@@ -231,4 +245,20 @@ class ExpenseController extends Controller
         }
     }
 
+    private function formatIndianNumber($num) {
+        $num = (string)$num;
+        $decimal = '';
+        if (strpos($num, '.') !== false) {
+            [$num, $decimal] = explode('.', $num);
+            $decimal = '.' . $decimal;
+        }
+
+        $last3 = substr($num, -3);
+        $restUnits = substr($num, 0, -3);
+        if ($restUnits != '') {
+            $last3 = ',' . $last3;
+        }
+        $restUnits = preg_replace("/\B(?=(\d{2})+(?!\d))/", ",", $restUnits);
+        return $restUnits . $last3 . $decimal;
+    }
 }
