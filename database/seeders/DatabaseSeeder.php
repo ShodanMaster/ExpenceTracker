@@ -26,5 +26,12 @@ class DatabaseSeeder extends Seeder
             'email_verified_at' => now(),
             'password' => bcrypt('admin@example'),
         ]);
+
+        User::create([
+            'name' => 'akshay',
+            'email' => 'akshay@example.com',
+            'email_verified_at' => now(),
+            'password' => bcrypt('akshay@example'),
+        ]);
     }
 }

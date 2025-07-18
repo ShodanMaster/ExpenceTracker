@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->decimal('amount', 10, 2);
+            $table->decimal('carry_forward', 15, 2)->default(0);
             $table->string('description')->nullable();
             $table->date('date');
             $table->foreignId('reason_id')->constrained()->onDelete('cascade');

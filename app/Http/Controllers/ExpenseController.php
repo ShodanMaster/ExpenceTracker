@@ -127,10 +127,10 @@ class ExpenseController extends Controller
                                 ->whereDate('date', '<=',$date)
                                 ->where('type', 'debit')->get();
 
-            $credit_sum = $credit->sum('amount');
-            $debit_sum = $debit->sum('amount');
+            $creditSum = $credit->sum('amount');
+            $debitSum = $debit->sum('amount');
 
-            $balance = $this->formatIndianNumber($credit_sum - $debit_sum);
+            $balance = $this->formatIndianNumber($creditSum - $debitSum);
 
             $data = [
                 'debit' => $debitExpenses,
