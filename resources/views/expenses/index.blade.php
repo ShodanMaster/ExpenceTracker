@@ -113,14 +113,8 @@
         </div>
     </div>
 
-    <div class="d-flex justify-content-between">
-        <h1>Expense</h1>
-        <div>
-            <h3>Balance:
-                <strong id="balance"></strong>
-            </h3>
-        </div>
-    </div>
+    <h1>Expense</h1>
+
     <div class="d-flex justify-content-between align-items-center mb-3">
         <button class="btn btn-outline-primary" onclick="changeMonth(-1)">&#8592; Prev</button>
         <h3 id="monthYear" class="mb-0"></h3>
@@ -139,6 +133,20 @@
 
     <div id="calendar" class="mt-2"></div>
     <hr>
+
+    <div class="d-flex justify-content-between">
+        <div>
+            <h3>Balance:
+                <strong id="balance"></strong>
+            </h3>
+        </div>
+        <div>
+            <h3>C/F:
+                <strong id="carry-forward"></strong>
+            </h3>
+        </div>
+    </div>
+
     <div class="card d-none mt-4" id="expense">
         <div class="card-header text-white text-center bg-dark fs-4 d-flex justify-content-between">
             <span id="title-expense-date"></span>
@@ -298,6 +306,7 @@
                     const data = res.data;
 
                     document.getElementById('balance').textContent = data.balance;
+                    document.getElementById('carry-forward').textContent = data.carry_forward;
                     document.getElementById('title-expense-date').textContent = "Date: " + res.date;
                     document.getElementById('total-transcations').textContent = "Total Transactions: " + (res.credit_count + res.debit_count);
                     document.getElementById('total-credits').textContent = "Total Credits: " + res.credit_count;
