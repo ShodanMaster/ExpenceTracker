@@ -124,7 +124,11 @@
                 submitButton.disabled = true;
                 submitButton.textContent = 'Submitting...';
 
-                axios.post("{{ route('register') }}", formData)
+                axios.post("{{ route('register') }}", formData, {
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    }
+                })
                     .then(response => {
                         const res = response.data;
 
@@ -177,7 +181,7 @@
                         }
                     })
                     .finally(() => {
-                        
+
                         submitButton.disabled = false;
                         submitButton.textContent = 'Sign Up';
                     });
