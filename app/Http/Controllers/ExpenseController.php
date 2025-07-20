@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Expense;
 use App\Models\Reason;
 use Exception;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -36,32 +37,17 @@ class ExpenseController extends Controller
     public function store(Request $request)
     {
         try {
+            DB::beginTransaction();
+
             $request->validate([
-                'date' => 'required|string',
+                'date' => 'required|date',
                 'type' => ['required', Rule::in(['credit', 'debit'])],
                 'reason' => 'required|string',
                 'amount' => 'required|integer|min:0',
                 'description' => 'nullable|string',
             ]);
 
-            $existing = Reason::where('name', $request->reason)->first();
-            if (!$existing) {
-                $reason = Reason::create(['name' => $request->reason]);
-            } else {
-                $reason = $existing;
-            }
-
-            $lastExpense = Expense::where('user_id', auth()->id())
-                                ->orderBy('date', 'desc')
-                                ->first();
-
-            $carryForwardBalance = $lastExpense ? $lastExpense->carry_forward : 0;
-
-            if ($request->type === 'credit') {
-                $newBalance = $carryForwardBalance + $request->amount;
-            } else {
-                $newBalance = $carryForwardBalance - $request->amount;
-            }
+            $reason = Reason::firstOrCreate(['name' => $request->reason]);
 
             $expense = Expense::create([
                 'user_id' => auth()->id(),
@@ -70,8 +56,43 @@ class ExpenseController extends Controller
                 'reason_id' => $reason->id,
                 'amount' => $request->amount,
                 'description' => $request->description,
-                'carry_forward' => $newBalance,
+                'carry_forward' => 0, // Temporary
             ]);
+
+            $expenses = Expense::where('user_id', auth()->id())
+                ->where(function ($query) use ($expense) {
+                    $query->where('date', '>', $expense->date)
+                        ->orWhere(function ($q) use ($expense) {
+                            $q->where('date', $expense->date)
+                                ->where('id', '>=', $expense->id);
+                        });
+                })
+                ->orderBy('date')
+                ->orderBy('id')
+                ->get();
+
+            $previousExpense = Expense::where('user_id', auth()->id())
+                ->where(function ($query) use ($expense) {
+                    $query->where('date', '<', $expense->date)
+                        ->orWhere(function ($q) use ($expense) {
+                            $q->where('date', $expense->date)
+                                ->where('id', '<', $expense->id);
+                        });
+                })
+                ->orderBy('date', 'desc')
+                ->orderBy('id', 'desc')
+                ->first();
+
+            $carryForward = $previousExpense ? $previousExpense->carry_forward : 0;
+
+            $allToUpdate = collect([$expense])->merge($expenses);
+
+            foreach ($allToUpdate as $exp) {
+                $carryForward += ($exp->type === 'credit') ? $exp->amount : -$exp->amount;
+                $exp->update(['carry_forward' => $carryForward]);
+            }
+
+            DB::commit();
 
             return response()->json([
                 'status' => 200,
@@ -81,7 +102,6 @@ class ExpenseController extends Controller
 
         } catch (ValidationException $e) {
             DB::rollBack();
-
             return response()->json([
                 'status' => 422,
                 'message' => 'Validation error.',
@@ -90,11 +110,9 @@ class ExpenseController extends Controller
 
         } catch (Exception $e) {
             DB::rollBack();
-
             Log::error('Storing failed: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString(),
             ]);
-
             return response()->json([
                 'status' => 500,
                 'message' => 'Storing failed. Please try again later.',
@@ -105,59 +123,45 @@ class ExpenseController extends Controller
     public function getExpenses($date)
     {
         try {
+            $userId = auth()->id();
+            $formattedDate = date('d-m-Y', strtotime($date));
 
-            $debitExpenses = Expense::where('user_id', auth()->id())
+            $expenses = Expense::where('user_id', $userId)
                 ->whereDate('date', $date)
-                ->where('type', 'debit')
-                ->get()
-                ->map(function ($de) {
-                    return [
-                        'id' => $de->id,
-                        'reason' => $de->reason->name,
-                        'amount' => $de->amount,
-                        'type' => $de->type,
-                        'date' => $de->date,
-                        'description' => $de->description,
-                    ];
-                });
-
-            $creditExpenses = Expense::where('user_id', auth()->id())
-                ->whereDate('date', $date)
-                ->where('type', 'credit')
-                ->get()
-                ->map(function ($ce) {
-                    return [
-                        'id' => $ce->id,
-                        'reason' => $ce->reason->name,
-                        'amount' => $ce->amount,
-                        'type' => $ce->type,
-                        'date' => $ce->date,
-                        'description' => $ce->description,
-                    ];
-                });
-
-            $credit = Expense::where('user_id', auth()->id())
-                ->whereDate('date', '<=', $date)
-                ->where('type', 'credit')
+                ->with('reason')
                 ->get();
 
-            $debit = Expense::where('user_id', auth()->id())
+            $debitExpenses = $expenses->where('type', 'debit')->values()->map(function ($exp) {
+                return $this->transformExpense($exp);
+            });
+
+            $creditExpenses = $expenses->where('type', 'credit')->values()->map(function ($exp) {
+                return $this->transformExpense($exp);
+            });
+
+            $creditSum = Expense::where('user_id', $userId)
+                ->whereDate('date', '<=', $date)
+                ->where('type', 'credit')
+                ->sum('amount');
+
+            $debitSum = Expense::where('user_id', $userId)
                 ->whereDate('date', '<=', $date)
                 ->where('type', 'debit')
-                ->get();
-
-            $creditSum = $credit->sum('amount');
-            $debitSum = $debit->sum('amount');
+                ->sum('amount');
 
             $balance = $creditSum - $debitSum;
-
-            // Get the carry forward balance (up to the previous date)
-            $previousBalance = Expense::where('user_id', auth()->id())
+            // dd($creditSum);
+            $creditBefore = Expense::where('user_id', $userId)
                 ->whereDate('date', '<', $date)
-                ->orderBy('date', 'desc')
-                ->first();
+                ->where('type', 'credit')
+                ->sum('amount');
 
-            $carryForwardBalance = $previousBalance ? $previousBalance->carry_forward : 0;
+            $debitBefore = Expense::where('user_id', $userId)
+                ->whereDate('date', '<', $date)
+                ->where('type', 'debit')
+                ->sum('amount');
+
+            $carryForwardBalance = $creditBefore - $debitBefore;
 
             $data = [
                 'debit' => $debitExpenses,
@@ -166,15 +170,22 @@ class ExpenseController extends Controller
                 'carry_forward' => $this->formatIndianNumber($carryForwardBalance),
             ];
 
+            // dd($data['balance']);
+
             return response()->json([
                 'status' => 200,
-                'date' => date('d-m-Y', strtotime($date)),
+                'date' => $formattedDate,
                 'debit_count' => $debitExpenses->count(),
                 'credit_count' => $creditExpenses->count(),
+                'total_transactions' => $debitExpenses->count() + $creditExpenses->count(),
                 'data' => $data,
             ]);
 
         } catch (Exception $e) {
+            Log::error('Expense fetch failed: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+            ]);
+
             return response()->json([
                 'status' => 500,
                 'message' => 'Error retrieving expenses.',
@@ -182,7 +193,6 @@ class ExpenseController extends Controller
             ], 500);
         }
     }
-
 
     /**
      * Display the specified resource.
@@ -203,13 +213,12 @@ class ExpenseController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id){
+    public function update(Request $request, string $id)
+    {
         try {
-
             DB::beginTransaction();
 
             $request->validate([
-                'id' => 'required',
                 'date' => 'required|string',
                 'type' => ['required', Rule::in(['credit', 'debit'])],
                 'reason' => 'required|string',
@@ -218,13 +227,9 @@ class ExpenseController extends Controller
             ]);
 
             $existing = Reason::where('name', $request->reason)->first();
-            if (!$existing) {
-                $reason = Reason::create(['name' => $request->reason]);
-            } else {
-                $reason = $existing;
-            }
+            $reason = $existing ?: Reason::create(['name' => $request->reason]);
 
-            $expense = Expense::where('id', $request->id)->first();
+            $expense = Expense::where('id', $id)->first();
 
             if (!$expense) {
                 return response()->json([
@@ -233,19 +238,24 @@ class ExpenseController extends Controller
                 ], 404);
             }
 
-            $lastExpense = Expense::where('user_id', auth()->id())
-                                ->orderBy('date', 'desc')
-                                ->where('id', '!=', $request->id)
-                                ->first();
+            $previousExpense = Expense::where('user_id', auth()->id())
+                ->where(function ($query) use ($expense) {
+                    $query->where('date', '<', $expense->date)
+                        ->orWhere(function ($q) use ($expense) {
+                            $q->where('date', $expense->date)
+                                ->where('id', '<', $expense->id);
+                        });
+                })
+                ->orderBy('date', 'desc')
+                ->orderBy('id', 'desc')
+                ->first();
 
-            $carryForwardBalance = $lastExpense ? $lastExpense->carry_forward : 0;
-
-            $amountDifference = $request->amount - $expense->amount;
+            $carryForwardBalance = $previousExpense ? $previousExpense->carry_forward : 0;
 
             if ($request->type === 'credit') {
-                $newBalance = $carryForwardBalance + $amountDifference;
+                $newBalance = $carryForwardBalance + $request->amount;
             } else {
-                $newBalance = $carryForwardBalance - $amountDifference;
+                $newBalance = $carryForwardBalance - $request->amount;
             }
 
             $expense->update([
@@ -258,6 +268,32 @@ class ExpenseController extends Controller
                 'carry_forward' => $newBalance,
             ]);
 
+            $futureExpenses = Expense::where('user_id', auth()->id())
+                ->where(function ($query) use ($expense) {
+                    $query->where('date', '>', $expense->date)
+                        ->orWhere(function ($q) use ($expense) {
+                            $q->where('date', $expense->date)
+                                ->where('id', '>', $expense->id);
+                        });
+                })
+                ->orderBy('date')
+                ->orderBy('id')
+                ->get();
+
+            $runningBalance = $newBalance;
+
+            foreach ($futureExpenses as $future) {
+                if ($future->type === 'credit') {
+                    $runningBalance += $future->amount;
+                } else {
+                    $runningBalance -= $future->amount;
+                }
+
+                $future->update([
+                    'carry_forward' => $runningBalance,
+                ]);
+            }
+
             DB::commit();
 
             return response()->json([
@@ -268,15 +304,6 @@ class ExpenseController extends Controller
 
         } catch (ValidationException $e) {
             DB::rollBack();
-            return response()->json([
-                'status' => 422,
-                'message' => 'Validation error.',
-                'errors' => $e->errors(),
-            ], 422);
-
-        } catch (ValidationException $e) {
-            DB::rollBack();
-
             return response()->json([
                 'status' => 422,
                 'message' => 'Validation error.',
@@ -297,7 +324,6 @@ class ExpenseController extends Controller
         }
     }
 
-
     /**
      * Remove the specified resource from storage.
      */
@@ -308,23 +334,45 @@ class ExpenseController extends Controller
 
             $expense = Expense::findOrFail($id);
             $userId = $expense->user_id;
-            $amount = $expense->amount;
+
+            $previousExpense = Expense::where('user_id', $userId)
+                ->where(function ($query) use ($expense) {
+                    $query->where('date', '<', $expense->date)
+                        ->orWhere(function ($q) use ($expense) {
+                            $q->where('date', $expense->date)
+                                ->where('id', '<', $expense->id);
+                        });
+                })
+                ->orderBy('date', 'desc')
+                ->orderBy('id', 'desc')
+                ->first();
+
+            $carryForwardBalance = $previousExpense ? $previousExpense->carry_forward : 0;
+
             $expense->delete();
 
-            $expenses = Expense::where('user_id', $userId)
-                            ->orderBy('date', 'asc')
-                            ->get();
+            $futureExpenses = Expense::where('user_id', $userId)
+                ->where(function ($query) use ($expense) {
+                    $query->where('date', '>', $expense->date)
+                        ->orWhere(function ($q) use ($expense) {
+                            $q->where('date', $expense->date)
+                                ->where('id', '>', $expense->id);
+                        });
+                })
+                ->orderBy('date')
+                ->orderBy('id')
+                ->get();
 
-            $carryForwardBalance = 0;
-
-            foreach ($expenses as $exp) {
-                if ($exp->type === 'credit') {
-                    $carryForwardBalance += $exp->amount;
+            foreach ($futureExpenses as $future) {
+                if ($future->type === 'credit') {
+                    $carryForwardBalance += $future->amount;
                 } else {
-                    $carryForwardBalance -= $exp->amount;
+                    $carryForwardBalance -= $future->amount;
                 }
 
-                $exp->update(['carry_forward' => $carryForwardBalance]);
+                $future->update([
+                    'carry_forward' => $carryForwardBalance,
+                ]);
             }
 
             DB::commit();
@@ -333,14 +381,39 @@ class ExpenseController extends Controller
                 'status' => 200,
                 'message' => 'Expense deleted successfully',
             ]);
+
+        } catch (ModelNotFoundException $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'status' => 404,
+                'message' => 'Expense not found',
+            ], 404);
+
         } catch (Exception $e) {
             DB::rollBack();
+
+            Log::error('Failed to delete expense: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+            ]);
 
             return response()->json([
                 'status' => 500,
                 'message' => 'Failed to delete expense',
-            ]);
+            ], 500);
         }
+    }
+
+    private function transformExpense($expense)
+    {
+        return [
+            'id' => $expense->id,
+            'reason' => $expense->reason->name,
+            'amount' => $expense->amount,
+            'type' => $expense->type,
+            'date' => $expense->date,
+            'description' => $expense->description,
+        ];
     }
 
     private function formatIndianNumber($num) {

@@ -301,6 +301,7 @@
         axios.get('/get-expenses/' + date)
             .then(response => {
                 const res = response.data;
+                // console.log(res.data.balance);
 
                 if (res.status === 200) {
                     const data = res.data;
