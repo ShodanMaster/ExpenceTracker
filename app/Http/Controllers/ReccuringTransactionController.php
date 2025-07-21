@@ -2,11 +2,109 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Reason;
+use App\Models\ReccuringTransaction;
+use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class ReccuringTransactionController extends Controller
 {
     public function index(){
-        return view('reccuringTrancasction');
+        $reasons = Reason::all();
+        return view('reccuringTransactions', compact('reasons'));
     }
+
+    public function store(Request $request)
+    {
+        try {
+            DB::beginTransaction();
+
+            $request->validate([
+                'type' => ['required', Rule::in(['credit', 'debit'])],
+                'reason' => 'required|string',
+                'amount' => 'required|integer|min:0',
+                'description' => 'nullable|string',
+                'frequency' => ['required', Rule::in(['daily', 'weekly', 'monthly', 'yearly'])],
+                'frequency_value' => 'nullable|string',
+            ]);
+
+            $reason = Reason::firstOrCreate(['name' => $request->reason]);
+
+            $transaction = [
+                'user_id' => auth()->id(),
+                'type' => $request->type,
+                'reason_id' => $reason->id,
+                'amount' => $request->amount,
+                'description' => $request->description,
+                'frequency' => $request->frequency,
+                'frequency_value' => $request->frequency_value,
+                'next_run_date' => $this->getNextDate($request->frequency, $request->frequency_value),
+            ];
+
+            ReccuringTransaction::create($transaction);
+
+            DB::commit();
+
+            return response()->json([
+                'status' => 200,
+                'message' => 'Recurring transaction created successfully.',
+            ], 200);
+
+        } catch (ValidationException $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'status' => 422,
+                'message' => 'Validation error.',
+                'errors' => $e->errors(),
+            ], 422);
+
+        } catch (Exception $e) {
+            DB::rollBack();
+
+            Log::error('Storing failed: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'status' => 500,
+                'message' => 'Storing failed. Please try again later.',
+            ], 500);
+        }
+    }
+
+    private function getNextDate($frequency, $frequencyValue)
+    {
+        $date = now();
+
+        switch ($frequency) {
+            case 'daily':
+                return $date->addDay();
+
+            case 'weekly':
+                $targetDay = (int) $frequencyValue;
+                $daysUntil = ($targetDay - $date->dayOfWeek + 7) % 7;
+                $daysUntil = $daysUntil === 0 ? 7 : $daysUntil;
+                return $date->addDays($daysUntil);
+
+            case 'monthly':
+                $targetDay = (int) $frequencyValue;
+                $nextMonth = $date->copy()->addMonthNoOverflow()->startOfMonth();
+                $day = min($targetDay, $nextMonth->daysInMonth);
+                return $nextMonth->day($day);
+
+            case 'yearly':
+                $targetMonth = (int) $frequencyValue;
+                $year = $date->month >= $targetMonth ? $date->year + 1 : $date->year;
+                return \Carbon\Carbon::create($year, $targetMonth, 1);
+
+            default:
+                throw new \Exception('Invalid frequency type');
+        }
+    }
+
 }

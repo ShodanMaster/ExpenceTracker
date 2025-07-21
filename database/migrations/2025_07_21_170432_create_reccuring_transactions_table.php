@@ -16,7 +16,8 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->foreignId('reason_id')->constrained()->onDelete('cascade');
             $table->decimal('amount', 10, 2);
-            $table->enum('type', ['income', 'expense']);
+            $table->string('description')->nullable();
+            $table->enum('type', ['credit', 'debit']);
             $table->enum('frequency', ['daily', 'weekly', 'monthly', 'yearly']);
             $table->tinyInteger('day_of_week')->nullable();
             $table->tinyInteger('day_of_month')->nullable();

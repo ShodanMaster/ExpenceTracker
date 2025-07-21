@@ -3,6 +3,7 @@
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ReccuringTransactionController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -21,6 +22,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::resource('expenses', ExpenseController::class);
     Route::get('get-expenses/{date}', [ExpenseController::class, 'getExpenses'])->name('getexpenses');
+
+    Route::resource('reccuring-transactions', ReccuringTransactionController::class);
 
 });
 
