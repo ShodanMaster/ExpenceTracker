@@ -53,7 +53,6 @@
 
 <script>
     function renderChart(ctxId, type, data, options = {}) {
-        // console.log(data);
 
         const ctx = document.getElementById(ctxId)?.getContext('2d');
         if (!ctx) return;
@@ -72,15 +71,13 @@
                 tooltip: {
                     callbacks: {
                         label: context => {
-                            // console.log('Tooltip context:', context.parsed['y']);
+
                             const label = context.label || context.dataset.label || '';
                             const value = context.parsed !== undefined ? context.parsed : '';
                             if (typeof value === 'object' && value !== null && 'y' in value) {
                                 return `${label}: ₹${Number(value['y']).toLocaleString()}`;
                             }
                             return `${label}: ₹${Number(value).toLocaleString()}`;
-                            // console.log('qwertyuio: ' + value);
-                            // return value;
 
                         }
                     }
@@ -142,7 +139,6 @@
                 const fallbackLabels = ['No Data'];
                 const fallbackData = [0];
 
-                // ✅ Income vs Expense Pie
                 renderChart('incomeVsExpenseChart', 'pie', {
                     labels: incomeVsExpense.labels || fallbackLabels,
                     datasets: normalizeDatasets(incomeVsExpense.datasets).length
@@ -153,7 +149,6 @@
                         }]
                 });
 
-                // ✅ Category-wise Pie
                 renderChart('categoryPieChart', 'pie', {
                     labels: categories.labels?.length ? categories.labels : fallbackLabels,
                     datasets: normalizeDatasets(categories.datasets).length
@@ -163,8 +158,7 @@
                             backgroundColor: ['#ddd']
                         }]
                 });
-
-                // Top Categories Chart (Bar)
+                
                 const normalizedTop = normalizeDatasets(topCategories.datasets);
 
                 const hasValidData = normalizedTop.length &&
@@ -180,17 +174,6 @@
                         backgroundColor: ['#ccc']
                     }]
                 });
-
-                // renderChart('topCategoryChart', 'bar', {
-                //     labels: ['Food', 'Rent', 'Shopping'],
-                //     datasets: [
-                //         {
-                //         label: 'Spending',
-                //         data: [5000, 12000, 3500],
-                //         backgroundColor: ['#36A2EB', '#FF6384', '#FFCE56'],
-                //         },
-                //     ],
-                //     });
 
             })
             .catch(error => {
