@@ -53,6 +53,8 @@
 
 <script>
     function renderChart(ctxId, type, data, options = {}) {
+        // console.log(data);
+
         const ctx = document.getElementById(ctxId)?.getContext('2d');
         if (!ctx) return;
 
@@ -62,15 +64,24 @@
 
         const isPie = ['pie', 'doughnut'].includes(type);
 
+
+
         const baseOptions = {
             responsive: true,
             plugins: {
                 tooltip: {
                     callbacks: {
                         label: context => {
+                            // console.log('Tooltip context:', context.parsed['y']);
                             const label = context.label || context.dataset.label || '';
                             const value = context.parsed !== undefined ? context.parsed : '';
+                            if (typeof value === 'object' && value !== null && 'y' in value) {
+                                return `${label}: ₹${Number(value['y']).toLocaleString()}`;
+                            }
                             return `${label}: ₹${Number(value).toLocaleString()}`;
+                            // console.log('qwertyuio: ' + value);
+                            // return value;
+
                         }
                     }
                 },
@@ -130,7 +141,6 @@
 
                 const fallbackLabels = ['No Data'];
                 const fallbackData = [0];
-                console.log(response.data.topCategories.datasets[0].data);
 
                 // ✅ Income vs Expense Pie
                 renderChart('incomeVsExpenseChart', 'pie', {
@@ -154,24 +164,33 @@
                         }]
                 });
 
-// Top Categories Chart (Bar)
-const normalizedTop = normalizeDatasets(topCategories.datasets);
-console.log('Normalized Top Dataset:', normalizedTop);
-console.log('Top Labels:', topCategories.labels);
+                // Top Categories Chart (Bar)
+                const normalizedTop = normalizeDatasets(topCategories.datasets);
 
-const hasValidData = normalizedTop.length &&
-    Array.isArray(topCategories.labels) &&
-    topCategories.labels.length === normalizedTop[0].data.length &&
-    normalizedTop[0].data.every(v => typeof v === 'number' && !isNaN(v));
+                const hasValidData = normalizedTop.length &&
+                    Array.isArray(topCategories.labels) &&
+                    topCategories.labels.length === normalizedTop[0].data.length &&
+                    normalizedTop[0].data.every(v => typeof v === 'number' && !isNaN(v));
 
-renderChart('topCategoryChart', 'bar', {
-    labels: hasValidData ? topCategories.labels : fallbackLabels,
-    datasets: hasValidData ? normalizedTop : [{
-        label: 'Top Categories',
-        data: fallbackData,
-        backgroundColor: ['#ccc']
-    }]
-});
+                renderChart('topCategoryChart', 'bar', {
+                    labels: hasValidData ? topCategories.labels : fallbackLabels,
+                    datasets: hasValidData ? normalizedTop : [{
+                        label: 'Top Categories',
+                        data: fallbackData,
+                        backgroundColor: ['#ccc']
+                    }]
+                });
+
+                // renderChart('topCategoryChart', 'bar', {
+                //     labels: ['Food', 'Rent', 'Shopping'],
+                //     datasets: [
+                //         {
+                //         label: 'Spending',
+                //         data: [5000, 12000, 3500],
+                //         backgroundColor: ['#36A2EB', '#FF6384', '#FFCE56'],
+                //         },
+                //     ],
+                //     });
 
             })
             .catch(error => {
