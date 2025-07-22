@@ -20,7 +20,7 @@ class ExpenseController extends Controller
     public function index()
     {
         $reasons = Reason::all();
-        return view('expenses.index', compact('reasons'));
+        return view('expenses', compact('reasons'));
     }
 
     /**
