@@ -72,6 +72,10 @@
 <div class="d-flex justify-content-between mb-3">
     <h1>Reccuring Transactions</h1>
 
+    <div class="input-group mb-3 w-50">
+        <input type="text" class="form-control" id="searchInput" placeholder="Search by reason, type, frequency...">
+    </div>
+
     <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addTransactionModal">
         Add Transaction
     </button>
@@ -182,7 +186,64 @@
                     });
             });
 
+            function renderPagination(current, total) {
+                const maxVisible = 7;
+                let html = '';
+
+                // Previous button
+                if (current > 1) {
+                    html += `<li class="page-item"><a class="page-link" href="#" onclick="loadTransactions(${current - 1})">Previous</a></li>`;
+                }
+
+                let startPage = Math.max(1, current - Math.floor(maxVisible / 2));
+                let endPage = startPage + maxVisible - 1;
+
+                if (endPage > total) {
+                    endPage = total;
+                    startPage = Math.max(1, endPage - maxVisible + 1);
+                }
+
+                if (startPage > 1) {
+                    html += `<li class="page-item"><a class="page-link" href="#" onclick="loadTransactions(1)">1</a></li>`;
+                    if (startPage > 2) html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+                }
+
+                for (let i = startPage; i <= endPage; i++) {
+                    html += `<li class="page-item ${i === current ? 'active' : ''}">
+                                <a class="page-link" href="#" onclick="loadTransactions(${i})">${i}</a>
+                            </li>`;
+                }
+
+                if (endPage < total) {
+                    if (endPage < total - 1) html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+                    html += `<li class="page-item"><a class="page-link" href="#" onclick="loadTransactions(${total})">${total}</a></li>`;
+                }
+
+                // Next button
+                if (current < total) {
+                    html += `<li class="page-item"><a class="page-link" href="#" onclick="loadTransactions(${current + 1})">Next</a></li>`;
+                }
+
+                document.getElementById('pagination').innerHTML = html;
+            }
+
+
             let currentPage = 1;
+            let currentSearch = '';
+
+            // Debounce function: limits how often a function can fire
+            function debounce(func, delay) {
+                let timeout;
+                return function (...args) {
+                    clearTimeout(timeout);
+                    timeout = setTimeout(() => func.apply(this, args), delay);
+                };
+            }
+
+            document.getElementById('searchInput').addEventListener('input', debounce(function (e) {
+                currentSearch = e.target.value.trim();
+                loadTransactions(1, currentSearch);
+            }, 300));
 
             function formatDate(dateStr) {
                 if (!dateStr) return '';
@@ -193,14 +254,25 @@
                 return `${day}-${month}-${year}`;
             }
 
-            function loadTransactions(page = 1) {
-                axios.get(`/transactions?page=${page}&per_page=10`)
+            function loadTransactions(page = 1, search = currentSearch) {
+                currentPage = page;
+                currentSearch = search;
+
+                axios.get(`/transactions?page=${page}&per_page=10&search=${encodeURIComponent(search)}`)
                     .then(response => {
                         const res = response.data;
-                        console.log(res);
                         const tbody = document.getElementById('transactions-body');
-                        const pagination = document.getElementById('pagination');
                         tbody.innerHTML = '';
+
+                        if (res.data.length === 0) {
+                            tbody.innerHTML = `
+                                <tr>
+                                    <td colspan="9" class="text-center text-muted">No transactions found.</td>
+                                </tr>`;
+                            document.getElementById('pagination').innerHTML = '';
+                            return;
+                        }
+
                         res.data.forEach((txn, index) => {
                             tbody.innerHTML += `
                                 <tr>
@@ -216,13 +288,14 @@
                                             <input class="form-check-input" type="checkbox" ${txn.is_active ? 'checked' : ''}>
                                         </div>
                                     </td>
-                                    <td>
-                                        <button class="btn btn-sm btn-primary me-1" onclick="editTransaction(${txn.id})">
+                                    <td class="text-nowrap">
+                                        <button class="btn btn-sm btn-primary me-2" onclick="editTransaction(${txn.id})" title="Edit">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pencil" viewBox="0 0 16 16">
                                                 <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325"/>
                                             </svg>
                                         </button>
-                                        <button class="btn btn-sm btn-danger" onclick="deleteTransaction(${txn.id})">
+
+                                        <button class="btn btn-sm btn-danger" onclick="deleteTransaction(${txn.id})" title="Delete">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16">
                                                 <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/>
                                                 <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z"/>
@@ -232,17 +305,15 @@
                                 </tr>`;
                         });
 
-                        pagination.innerHTML = '';
-                        for (let i = 1; i <= res.last_page; i++) {
-                            pagination.innerHTML += `
-                                <li class="page-item ${i === res.current_page ? 'active' : ''}">
-                                    <a class="page-link" href="#" onclick="loadTransactions(${i})">${i}</a>
-                                </li>`;
-                        }
-                        currentPage = res.current_page;
+                        renderPagination(res.current_page, res.last_page);
                     })
                     .catch(error => {
                         console.error("Error loading transactions", error);
+                        document.getElementById('transactions-body').innerHTML = `
+                            <tr>
+                                <td colspan="9" class="text-center text-danger">Failed to load transactions.</td>
+                            </tr>`;
+                        document.getElementById('pagination').innerHTML = '';
                     });
             }
 

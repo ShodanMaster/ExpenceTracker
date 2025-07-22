@@ -85,10 +85,25 @@ class ReccuringTransactionController extends Controller
     {
         try {
             $perPage = $request->get('per_page', 10);
-            $transactions = ReccuringTransaction::where('user_id', auth()->id())
-                ->with('reason')
-                ->orderBy('next_occurence', 'asc')
-                ->paginate($perPage);
+            $search = $request->get('search');
+            $userId = auth()->id();
+
+            $query = ReccuringTransaction::with('reason')
+                ->where('user_id', $userId)
+                ->orderBy('next_occurence', 'asc');
+
+            if ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('type', 'like', "%$search%")
+                    ->orWhere('frequency', 'like', "%$search%")
+                    ->orWhere('description', 'like', "%$search%")
+                    ->orWhereHas('reason', function ($subQuery) use ($search) {
+                        $subQuery->where('name', 'like', "%$search%");
+                    });
+                });
+            }
+
+            $transactions = $query->paginate($perPage);
 
             return response()->json([
                 'status' => 200,
