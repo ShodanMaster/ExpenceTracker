@@ -103,7 +103,6 @@ class ReccuringTransactionController extends Controller
             Log::error("Error fetching transactions: " . $e->getMessage(), [
                 'trace' => $e->getTraceAsString()
             ]);
-            dd($e);
             return response()->json([
                 'status' => 500,
                 'message' => 'Error fetching transactions'
