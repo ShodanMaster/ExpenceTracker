@@ -186,6 +186,49 @@
                     });
             });
 
+            function deleteTransaction(id) {
+                Swal.fire({
+                    title: 'Are you sure?',
+                    text: "You won't be able to revert this!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Yes, delete it!'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        axios.delete(`/reccuring-transactions/${id}`)
+                            .then(response => {
+                                const data = response.data;
+                                if (data.status == 200) {
+                                    Swal.fire({
+                                        icon: 'success',
+                                        title: 'Deleted!',
+                                        text: data.message || 'Transaction has been deleted.',
+                                        showConfirmButton: false,
+                                        timer: 2000,
+                                        timerProgressBar: true,
+                                    });
+                                    loadTransactions(currentPage);
+                                } else {
+                                    Swal.fire({
+                                        icon: 'error',
+                                        title: 'Error',
+                                        text: data.message || 'Failed to delete transaction.',
+                                    });
+                                }
+                            })
+                            .catch(() => {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Error',
+                                    text: 'An error occurred while deleting the transaction.',
+                                });
+                            });
+                    }
+                });
+            }
+
             function renderPagination(current, total) {
                 const maxVisible = 7;
                 let html = '';
@@ -210,7 +253,7 @@
 
                 for (let i = startPage; i <= endPage; i++) {
                     html += `<li class="page-item ${i === current ? 'active' : ''}">
-                                <a class="page-link" href="#" onclick="loadTransactions(${i})">${i}</a>
+                                <a class="page-link" href="javascript:void(0)" onclick="loadTransactions(${i})">${i}</a>
                             </li>`;
                 }
 
@@ -318,6 +361,7 @@
             }
 
             window.loadTransactions = loadTransactions;
+            window.deleteTransaction = deleteTransaction;
             loadTransactions(currentPage);
         });
     </script>

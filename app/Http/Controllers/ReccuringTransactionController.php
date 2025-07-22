@@ -125,6 +125,28 @@ class ReccuringTransactionController extends Controller
         }
     }
 
+    public function destroy($id)
+    {
+        try {
+            $transaction = ReccuringTransaction::findOrFail($id);
+            $transaction->delete();
+
+            return response()->json([
+                'status' => 200,
+                'message' => 'Recurring transaction deleted successfully.',
+            ], 200);
+
+        } catch (Exception $e) {
+            Log::error("Error deleting transaction: " . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json([
+                'status' => 500,
+                'message' => 'Error deleting transaction'
+            ], 500);
+        }
+    }
+
     private function extractFrequencyFields(string $frequency, ?string $frequencyValue): array
     {
         $dayOfWeek = null;
