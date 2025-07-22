@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Reason;
 use App\Models\ReccuringTransaction;
+use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -34,7 +35,9 @@ class ReccuringTransactionController extends Controller
 
             $reason = Reason::firstOrCreate(['name' => $request->reason]);
 
-            $transaction = [
+            $frequencyFields = $this->extractFrequencyFields($request->frequency, $request->frequency_value);
+
+            $transaction = array_merge([
                 'user_id' => auth()->id(),
                 'type' => $request->type,
                 'reason_id' => $reason->id,
@@ -42,8 +45,9 @@ class ReccuringTransactionController extends Controller
                 'description' => $request->description,
                 'frequency' => $request->frequency,
                 'frequency_value' => $request->frequency_value,
-                'next_run_date' => $this->getNextDate($request->frequency, $request->frequency_value),
-            ];
+                'next_occurence' => $this->getNextDate($request->frequency, $request->frequency_value),
+            ], $frequencyFields);
+
 
             ReccuringTransaction::create($transaction);
 
@@ -77,6 +81,67 @@ class ReccuringTransactionController extends Controller
         }
     }
 
+    public function getTransactions(Request $request)
+    {
+        try {
+            $perPage = $request->get('per_page', 10);
+            $transactions = ReccuringTransaction::where('user_id', auth()->id())
+                ->with('reason')
+                ->orderBy('next_occurence', 'asc')
+                ->paginate($perPage);
+
+            return response()->json([
+                'status' => 200,
+                'data' => $transactions->items(),
+                'total' => $transactions->total(),
+                'per_page' => $transactions->perPage(),
+                'current_page' => $transactions->currentPage(),
+                'last_page' => $transactions->lastPage(),
+            ]);
+
+        } catch (Exception $e) {
+            Log::error("Error fetching transactions: " . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            dd($e);
+            return response()->json([
+                'status' => 500,
+                'message' => 'Error fetching transactions'
+            ], 500);
+        }
+    }
+
+    private function extractFrequencyFields(string $frequency, ?string $frequencyValue): array
+    {
+        $dayOfWeek = null;
+        $dayOfMonth = null;
+        $monthOfYear = null;
+
+        switch ($frequency) {
+            case 'weekly':
+                $dayOfWeek = strtolower($frequencyValue);
+                break;
+
+            case 'monthly':
+                $dayOfMonth = (int) $frequencyValue;
+                break;
+
+            case 'yearly':
+                [$month, $day] = explode('-', $frequencyValue);
+                $dayOfMonth = (int) $day;
+                $monthOfYear = (int) $month;
+                break;
+
+            // daily does not set additional fields
+        }
+
+        return [
+            'day_of_week' => $dayOfWeek,
+            'day_of_month' => $dayOfMonth,
+            'month_of_year' => $monthOfYear,
+        ];
+    }
+
     private function getNextDate($frequency, $frequencyValue)
     {
         $date = now();
@@ -100,10 +165,10 @@ class ReccuringTransactionController extends Controller
             case 'yearly':
                 $targetMonth = (int) $frequencyValue;
                 $year = $date->month >= $targetMonth ? $date->year + 1 : $date->year;
-                return \Carbon\Carbon::create($year, $targetMonth, 1);
+                return Carbon::create($year, $targetMonth, 1);
 
             default:
-                throw new \Exception('Invalid frequency type');
+                throw new Exception('Invalid frequency type');
         }
     }
 

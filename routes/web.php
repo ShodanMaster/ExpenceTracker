@@ -24,6 +24,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('get-expenses/{date}', [ExpenseController::class, 'getExpenses'])->name('getexpenses');
 
     Route::resource('reccuring-transactions', ReccuringTransactionController::class);
+    Route::get('/transactions', [ReccuringTransactionController::class, 'getTransactions'])->name('reccuring-transactions.fetch');
 
 });
 

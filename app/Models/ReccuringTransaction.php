@@ -19,4 +19,11 @@ class ReccuringTransaction extends Model
         'next_run_date',
         'is_active'
     ];
+
+    // In ReccuringTransaction.php
+    public function reason()
+    {
+        return $this->belongsTo(Reason::class);
+    }
+
 }

@@ -22,8 +22,8 @@ return new class extends Migration
             $table->tinyInteger('day_of_week')->nullable();
             $table->tinyInteger('day_of_month')->nullable();
             $table->tinyInteger('month_of_year')->nullable();
-            $table->date('last_run_date')->nullable();
-            $table->date('next_run_date')->nullable();
+            $table->date('last_occurence')->nullable();
+            $table->date('next_occurence')->nullable();
             $table->boolean('is_active')->default(true);
             $table->timestamps();
         });
