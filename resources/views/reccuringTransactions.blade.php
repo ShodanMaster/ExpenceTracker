@@ -69,6 +69,76 @@
   </div>
 </div>
 
+<!-- Edit Transaction Modal -->
+<div class="modal fade" id="editTransactionModal" tabindex="-1" aria-labelledby="editTransactionModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+        <div class="modal-header bg-dark text-white">
+            <h1 class="modal-title fs-5" id="editTransactionModalLabel">Edit Transaction</h1>
+            <button type="button" class="btn-close text-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <form id="editTransactionForm">
+            <div class="modal-body">
+                <input type="hidden" id="editTransactionId" name="id">
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold me-3">Type:</label>
+                    <div class="d-inline-flex gap-3 align-items-center">
+                        <div class="form-check form-check-inline m-0">
+                            <input class="form-check-input" type="radio" name="type" id="editCredit" value="credit" required>
+                            <label class="form-check-label" for="editCredit">Credit</label>
+                        </div>
+                        <div class="form-check form-check-inline m-0">
+                            <input class="form-check-input" type="radio" name="type" id="editDebit" value="debit">
+                            <label class="form-check-label" for="editDebit">Debit</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <input type="text" class="form-control" id="editReason" name="reason" placeholder="Reason" list="reason-list" required>
+                        <datalist id="reason-list">
+                            @foreach ($reasons as $reason)
+                                <option value="{{ $reason->name }}"></option>
+                            @endforeach
+                        </datalist>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <input type="number" step="0.01" class="form-control" id="editAmount" name="amount" placeholder="Amount" required>
+                        {{-- <input type="number" step="0.01" class="form-control" id="editAmount" name="amount" placeholder="Amount" required> --}}
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="editFrequency" class="form-label">Frequency</label>
+                        <select class="form-select" id="editFrequency" name="frequency" required>
+                            <option value="" disabled>Select Frequency</option>
+                            <option value="daily">Daily</option>
+                            <option value="weekly">Weekly</option>
+                            <option value="monthly">Monthly</option>
+                            <option value="yearly">Yearly</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3" id="editFrequencyValueWrapper" style="display: none;">
+                        <label for="editFrequencyValue" class="form-label">Frequency Detail</label>
+                        <select class="form-select" id="editFrequencyValue" name="frequency_value"></select>
+                    </div>
+                </div>
+
+                <textarea class="form-control" name="description" id="editDescription" placeholder="Description"></textarea>
+            </div>
+
+            <div class="modal-footer bg-dark">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-primary">Update Transaction</button>
+            </div>
+        </form>
+    </div>
+  </div>
+</div>
+
 <div class="d-flex justify-content-between mb-3">
     <h1>Reccuring Transactions</h1>
 
@@ -115,7 +185,7 @@
 
             frequency.addEventListener('change', function () {
                 const value = this.value;
-                input.innerHTML = '';
+                input.innerHTML = ''; // Clear existing options
 
                 switch (value) {
                     case 'daily':
@@ -145,6 +215,57 @@
                     default:
                         wrapper.style.display = 'none';
                 }
+            });
+
+            function setupFrequencyHandler({ frequencySelect, wrapper, input, label }) {
+                frequencySelect.addEventListener('change', function () {
+                    const value = this.value;
+                    input.innerHTML = ''; // Clear previous options
+
+                    switch (value) {
+                        case 'daily':
+                            wrapper.style.display = 'none';
+                            break;
+                        case 'weekly':
+                            label.innerText = 'Select Day of Week';
+                            wrapper.style.display = 'block';
+                            ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+                                .forEach((day, index) => input.appendChild(new Option(day, index)));
+                            break;
+                        case 'monthly':
+                            label.innerText = 'Select Day of Month';
+                            wrapper.style.display = 'block';
+                            for (let i = 1; i <= 30; i++) {
+                                input.appendChild(new Option(i, i));
+                            }
+                            break;
+                        case 'yearly':
+                            label.innerText = 'Select Month';
+                            wrapper.style.display = 'block';
+                            ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August',
+                            'September', 'October', 'November', 'December']
+                                .forEach((month, index) => input.appendChild(new Option(month, index + 1)));
+                            break;
+                        default:
+                            wrapper.style.display = 'none';
+                    }
+                });
+            }
+
+
+            setupFrequencyHandler({
+                frequencySelect: document.getElementById('frequency'),
+                wrapper: document.getElementById('frequency_value_wrapper'),
+                input: document.getElementById('frequency_value'),
+                label: document.getElementById('frequency_label')
+            });
+
+            // Edit Modal
+            setupFrequencyHandler({
+                frequencySelect: document.getElementById('editFrequency'),
+                wrapper: document.getElementById('editFrequencyValueWrapper'),
+                input: document.getElementById('editFrequencyValue'),
+                label: document.querySelector('#editFrequencyValueWrapper label')
             });
 
             document.getElementById('addTransactionForm').addEventListener('submit', function (e) {
@@ -185,6 +306,116 @@
                         });
                     });
             });
+
+            function editTransaction(id) {
+                axios.get(`/reccuring-transactions/${id}`)
+                    .then(response => {
+                    const txn = response.data.data;
+
+                    // Fill basic fields
+                    document.getElementById('editTransactionId').value = txn.id;
+                    document.getElementById('editReason').value = txn.reason?.name || '';
+                    document.getElementById('editAmount').value = txn.amount;
+                    document.getElementById('editDescription').value = txn.description || '';
+
+                    // Type radio
+                    document.getElementById('editCredit').checked = txn.type === 'credit';
+                    document.getElementById('editDebit').checked = txn.type === 'debit';
+
+                    // Frequency
+                    const frequencySelect = document.getElementById('editFrequency');
+                    const frequencyValue = document.getElementById('editFrequencyValue');
+
+                    frequencySelect.value = txn.frequency;
+                    frequencySelect.dispatchEvent(new Event('change'));
+
+                    document.getElementById('editFrequency').value = txn.frequency;
+                    document.getElementById('editFrequency').dispatchEvent(new Event('change'));
+
+                    setTimeout(() => {
+                        const valInput = document.getElementById('editFrequencyValue');
+                        if (txn.frequency === 'weekly') {
+                            valInput.value = txn.day_of_week;
+                        } else if (txn.frequency === 'monthly') {
+                            valInput.value = txn.day_of_month;
+                        } else if (txn.frequency === 'yearly') {
+                            valInput.value = txn.month_of_year;
+                        }
+                    }, 100);
+
+
+                    // Show modal
+                    const modal = new bootstrap.Modal(document.getElementById('editTransactionModal'));
+                    modal.show();
+                })
+                .catch(error => {
+                    console.error('Error fetching transaction:', error);
+                    alert('Failed to load transaction.');
+                });
+            }
+
+            document.getElementById('editTransactionForm').addEventListener('submit', function (e) {
+                e.preventDefault();
+
+                const id = document.getElementById('editTransactionId').value;
+                const type = document.querySelector('input[name="type"]:checked').value;
+                const reason = document.getElementById('editReason').value;
+                const amount = document.getElementById('editAmount').value;
+                const frequency = document.getElementById('editFrequency').value;
+                const frequencyValue = document.getElementById('editFrequencyValue').value;
+                const description = document.getElementById('editDescription').value;
+
+                const payload = {
+                    type,
+                    reason,
+                    amount,
+                    frequency,
+                    description
+                };
+
+                if (frequency === 'weekly') {
+                    payload.day_of_week = frequencyValue;
+                } else if (frequency === 'monthly') {
+                    payload.day_of_month = frequencyValue;
+                } else if (frequency === 'yearly') {
+                    payload.month_of_year = frequencyValue;
+                }
+
+                axios.patch(`/reccuring-transactions/${id}`, payload)
+                    .then(response => {
+                        const data = response.data;
+                        if (data.status == 200) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Success',
+                                text: data.message || 'Successfully Updated',
+                                showConfirmButton: false,
+                                timer: 2000,
+                                timerProgressBar: true,
+                            });
+                            bootstrap.Modal.getInstance(document.getElementById('editTransactionModal')).hide();
+                            document.getElementById('editTransactionForm').reset();
+                            document.getElementById('debit').checked = true;
+                            loadTransactions(1);
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: 'Something Went Wrong',
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        console.error("Error updating transaction:", error);
+                        // alert('Failed to update transaction.');
+                        Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: 'Failed to update transaction.',
+                            });
+                    });
+            });
+
 
             function deleteTransaction(id) {
                 Swal.fire({
@@ -362,6 +593,7 @@
 
             window.loadTransactions = loadTransactions;
             window.deleteTransaction = deleteTransaction;
+            window.editTransaction = editTransaction;
             loadTransactions(currentPage);
         });
     </script>

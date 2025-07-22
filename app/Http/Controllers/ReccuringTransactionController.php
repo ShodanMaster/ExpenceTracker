@@ -12,6 +12,8 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
+use function PHPSTORM_META\type;
+
 class ReccuringTransactionController extends Controller
 {
     public function index(){
@@ -27,7 +29,7 @@ class ReccuringTransactionController extends Controller
             $request->validate([
                 'type' => ['required', Rule::in(['credit', 'debit'])],
                 'reason' => 'required|string',
-                'amount' => 'required|integer|min:0',
+                'amount' => 'required|numeric|min:0',
                 'description' => 'nullable|string',
                 'frequency' => ['required', Rule::in(['daily', 'weekly', 'monthly', 'yearly'])],
                 'frequency_value' => 'nullable|string',
@@ -37,6 +39,7 @@ class ReccuringTransactionController extends Controller
 
             $frequencyFields = $this->extractFrequencyFields($request->frequency, $request->frequency_value);
 
+            //dd($request->all());
             $transaction = array_merge([
                 'user_id' => auth()->id(),
                 'type' => $request->type,
@@ -125,6 +128,77 @@ class ReccuringTransactionController extends Controller
         }
     }
 
+    public function show($id)
+    {
+        try {
+            $transaction = ReccuringTransaction::with('reason')->findOrFail($id);
+            return response()->json([
+                'status' => 200,
+                'data' => $transaction,
+            ]);
+        } catch (Exception $e) {
+            Log::error("Error fetching transaction: " . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json([
+                'status' => 404,
+                'message' => 'Transaction not found'
+            ], 404);
+        }
+    }
+
+    public function update(Request $request, $id)
+{
+            //dd($request->all());
+    $request->validate([
+        'type' => 'required|in:credit,debit',
+        'reason' => 'required|string',
+        'amount' => 'required|numeric',
+        'frequency' => 'required|in:daily,weekly,monthly,yearly',
+        'description' => 'nullable|string',
+        'frequency_value' => 'nullable|integer',
+    ]);
+
+    $transaction = ReccuringTransaction::findOrFail($id);
+
+    $transaction->type = $request->type;
+    $transaction->amount = $request->amount;
+    $transaction->description = $request->description;
+    $transaction->frequency = $request->frequency;
+
+    // Reset all frequency fields
+    $transaction->day_of_week = null;
+    $transaction->day_of_month = null;
+    $transaction->month_of_year = null;
+
+    // Set based on frequency
+    switch ($request->frequency) {
+        case 'weekly':
+            $transaction->day_of_week = $request->frequency_value;
+            break;
+        case 'monthly':
+            $transaction->day_of_month = $request->frequency_value;
+            break;
+        case 'yearly':
+            $transaction->month_of_year = $request->frequency_value;
+            break;
+        // 'daily' requires no extra value
+    }
+
+    // Lookup reason
+    $reason = Reason::where('name', $request->reason)->first();
+    if (!$reason) {
+        return response()->json(['message' => 'Reason not found'], 404);
+    }
+
+    $transaction->reason_id = $reason->id;
+    $transaction->next_occurence = $this->getNextDate($request->frequency, $request->frequency_value);
+    $transaction->save();
+
+    return response()->json(['status' => 200, 'message' => 'Transaction updated successfully']);
+}
+
+
     public function destroy($id)
     {
         try {
@@ -147,65 +221,77 @@ class ReccuringTransactionController extends Controller
         }
     }
 
-    private function extractFrequencyFields(string $frequency, ?string $frequencyValue): array
-    {
-        $dayOfWeek = null;
-        $dayOfMonth = null;
-        $monthOfYear = null;
+private function extractFrequencyFields(string $frequency, ?string $frequencyValue): array
+{
+    $dayOfWeek = null;
+    $dayOfMonth = null;
+    $monthOfYear = null;
 
-        switch ($frequency) {
-            case 'weekly':
-                $dayOfWeek = strtolower($frequencyValue);
-                break;
+    switch ($frequency) {
+        case 'weekly':
+            $dayOfWeek = is_numeric($frequencyValue) ? (int)$frequencyValue : null;
+            break;
 
-            case 'monthly':
-                $dayOfMonth = (int) $frequencyValue;
-                break;
+        case 'monthly':
+            $dayOfMonth = is_numeric($frequencyValue) ? (int)$frequencyValue : null;
+            break;
 
-            case 'yearly':
-                [$month, $day] = explode('-', $frequencyValue);
-                $dayOfMonth = (int) $day;
-                $monthOfYear = (int) $month;
-                break;
+        case 'yearly':
+            $monthOfYear = is_numeric($frequencyValue) ? (int)$frequencyValue : null;
+            break;
 
-            // daily does not set additional fields
-        }
-
-        return [
-            'day_of_week' => $dayOfWeek,
-            'day_of_month' => $dayOfMonth,
-            'month_of_year' => $monthOfYear,
-        ];
+        // daily doesn't need additional fields
     }
 
-    private function getNextDate($frequency, $frequencyValue)
-    {
-        $date = now();
+    return [
+        'day_of_week' => $dayOfWeek,
+        'day_of_month' => $dayOfMonth,
+        'month_of_year' => $monthOfYear,
+    ];
+}
+/////////////////////////////////////////////////////////////////
+//////////////BUG IN NEXT OCCURENCE DATE/////////////////////////
+/////////////////////////////////////////////////////////////////
 
-        switch ($frequency) {
-            case 'daily':
-                return $date->addDay();
+private function getNextDate($frequency, $frequencyValue)
+{
+    $today = now();
 
-            case 'weekly':
-                $targetDay = (int) $frequencyValue;
-                $daysUntil = ($targetDay - $date->dayOfWeek + 7) % 7;
-                $daysUntil = $daysUntil === 0 ? 7 : $daysUntil;
-                return $date->addDays($daysUntil);
+    switch ($frequency) {
+        case 'daily':
+            return $today->addDay()->startOfDay();
 
-            case 'monthly':
-                $targetDay = (int) $frequencyValue;
-                $nextMonth = $date->copy()->addMonthNoOverflow()->startOfMonth();
-                $day = min($targetDay, $nextMonth->daysInMonth);
-                return $nextMonth->day($day);
+        case 'weekly':
+            $targetDay = (int) $frequencyValue;
+            $daysUntil = ($targetDay - $today->dayOfWeek + 7) % 7;
+            $daysUntil = $daysUntil === 0 ? 7 : $daysUntil;
+            return $today->addDays($daysUntil)->startOfDay();
 
-            case 'yearly':
-                $targetMonth = (int) $frequencyValue;
-                $year = $date->month >= $targetMonth ? $date->year + 1 : $date->year;
-                return Carbon::create($year, $targetMonth, 1);
+        case 'monthly':
+            $targetDay = (int) $frequencyValue;
 
-            default:
-                throw new Exception('Invalid frequency type');
-        }
+            // Try to return the date this month, if it's still upcoming
+            $thisMonthTarget = $today->copy()->day(min($targetDay, $today->daysInMonth));
+            if ($thisMonthTarget->isFuture()) {
+                return $thisMonthTarget->startOfDay();
+            }
+
+            // Otherwise, go to next month
+            $nextMonth = $today->copy()->addMonthNoOverflow()->startOfMonth();
+            $day = min($targetDay, $nextMonth->daysInMonth);
+            return $nextMonth->day($day)->startOfDay();
+
+        case 'yearly':
+            $targetMonth = (int) $frequencyValue;
+            $targetDay = 1;
+
+            $year = $today->month >= $targetMonth ? $today->year + 1 : $today->year;
+            $day = min($targetDay, Carbon::create($year, $targetMonth)->daysInMonth);
+            return Carbon::create($year, $targetMonth, $day)->startOfDay();
+
+        default:
+            throw new Exception('Invalid frequency type');
     }
+}
 
 }
