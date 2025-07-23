@@ -16,12 +16,17 @@ class ReccuringTransaction extends Model
         'day_of_week',
         'day_of_month',
         'month_of_year',
-        'last_run_date',
-        'next_run_date',
+        'last_occurence',
+        'next_occurence',
         'is_active'
     ];
 
-    // In ReccuringTransaction.php
+    protected $casts = [
+        'is_active' => 'boolean',
+        'last_occurence' => 'datetime',
+        'next_occurence' => 'datetime',
+    ];
+    
     public function reason()
     {
         return $this->belongsTo(Reason::class);

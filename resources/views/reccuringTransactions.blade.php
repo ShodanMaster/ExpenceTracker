@@ -185,7 +185,7 @@
 
             frequency.addEventListener('change', function () {
                 const value = this.value;
-                input.innerHTML = ''; // Clear existing options
+                input.innerHTML = '';
 
                 switch (value) {
                     case 'daily':
@@ -220,7 +220,7 @@
             function setupFrequencyHandler({ frequencySelect, wrapper, input, label }) {
                 frequencySelect.addEventListener('change', function () {
                     const value = this.value;
-                    input.innerHTML = ''; // Clear previous options
+                    input.innerHTML = '';
 
                     switch (value) {
                         case 'daily':
@@ -252,15 +252,13 @@
                 });
             }
 
-
             setupFrequencyHandler({
                 frequencySelect: document.getElementById('frequency'),
                 wrapper: document.getElementById('frequency_value_wrapper'),
                 input: document.getElementById('frequency_value'),
                 label: document.getElementById('frequency_label')
             });
-
-            // Edit Modal
+            
             setupFrequencyHandler({
                 frequencySelect: document.getElementById('editFrequency'),
                 wrapper: document.getElementById('editFrequencyValueWrapper'),
@@ -272,6 +270,7 @@
                 e.preventDefault();
                 const formData = new FormData(this);
                 const url = "{{ route('reccuring-transactions.store') }}";
+                const wrapper = document.getElementById('frequency_value_wrapper');
 
                 axios.post(url, formData)
                     .then(response => {
@@ -288,6 +287,7 @@
                             bootstrap.Modal.getInstance(document.getElementById('addTransactionModal')).hide();
                             document.getElementById('addTransactionForm').reset();
                             document.getElementById('debit').checked = true;
+                            wrapper.style.display = 'none'
                             loadTransactions(1);
                         } else {
                             Swal.fire({
@@ -307,50 +307,48 @@
                     });
             });
 
-function editTransaction(id) {
-    axios.get(`/reccuring-transactions/${id}`)
-        .then(response => {
-            const txn = response.data.data;
+            function editTransaction(id) {
+                axios.get(`/reccuring-transactions/${id}`)
+                    .then(response => {
+                        const txn = response.data.data;
+                        
+                        document.getElementById('editTransactionId').value = txn.id;
+                        document.getElementById('editReason').value = txn.reason?.name || '';
+                        document.getElementById('editAmount').value = txn.amount;
+                        document.getElementById('editDescription').value = txn.description || '';
+                        
+                        document.getElementById('editCredit').checked = txn.type === 'credit';
+                        document.getElementById('editDebit').checked = txn.type === 'debit';
+                        
+                        const frequencySelect = document.getElementById('editFrequency');
+                        frequencySelect.value = txn.frequency;
+                        
+                        frequencySelect.dispatchEvent(new Event('change'));
+                        
+                        setTimeout(() => {
+                            const frequencyValueSelect = document.getElementById('editFrequencyValue');
+                            const val = String(txn.frequency_value); 
+                            const foundOption = [...frequencyValueSelect.options].find(option => option.value === val);
 
-            // Fill basic fields
-            document.getElementById('editTransactionId').value = txn.id;
-            document.getElementById('editReason').value = txn.reason?.name || '';
-            document.getElementById('editAmount').value = txn.amount;
-            document.getElementById('editDescription').value = txn.description || '';
-
-            // Type radio
-            document.getElementById('editCredit').checked = txn.type === 'credit';
-            document.getElementById('editDebit').checked = txn.type === 'debit';
-
-            // Frequency dropdown
-            const frequencySelect = document.getElementById('editFrequency');
-            frequencySelect.value = txn.frequency;
-
-            // Trigger change to populate frequency value options
-            frequencySelect.dispatchEvent(new Event('change'));
-
-            // Wait for options to render, then set selected value
-            setTimeout(() => {
-                const frequencyValueSelect = document.getElementById('editFrequencyValue');
-                const val = String(txn.frequency_value); // Always convert to string for matching
-                const foundOption = [...frequencyValueSelect.options].find(option => option.value === val);
-
-                if (foundOption) {
-                    frequencyValueSelect.value = val;
-                } else {
-                    console.warn(`Value '${val}' not found in options`);
-                }
-            }, 100); // Slightly longer delay to ensure DOM updates
-
-            // Show modal
-            const modal = new bootstrap.Modal(document.getElementById('editTransactionModal'));
-            modal.show();
-        })
-        .catch(error => {
-            console.error('Error fetching transaction:', error);
-            alert('Failed to load transaction.');
-        });
-}
+                            if (foundOption) {
+                                frequencyValueSelect.value = val;
+                            } else {
+                                console.warn(`Value '${val}' not found in options`);
+                            }
+                        }, 100); 
+                        
+                        const modal = new bootstrap.Modal(document.getElementById('editTransactionModal'));
+                        modal.show();
+                    })
+                    .catch(error => {
+                        console.error('Error fetching transaction:', error);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'Failed to fetch transaction details.',
+                        });
+                    });
+            }
 
             document.getElementById('editTransactionForm').addEventListener('submit', function (e) {
                 e.preventDefault();
@@ -362,7 +360,7 @@ function editTransaction(id) {
                 const frequency = document.getElementById('editFrequency').value;
                 const frequencyValue = document.getElementById('editFrequencyValue').value;
                 const description = document.getElementById('editDescription').value;
-                console.log("Frequency Value: " + frequencyValue);
+                const wrapper = document.getElementById('frequency_value_wrapper');
 
                 const payload = {
                     type,
@@ -396,6 +394,7 @@ function editTransaction(id) {
                             bootstrap.Modal.getInstance(document.getElementById('editTransactionModal')).hide();
                             document.getElementById('editTransactionForm').reset();
                             document.getElementById('debit').checked = true;
+                            wrapper.style.display = 'none'
                             loadTransactions(1);
                         } else {
                             Swal.fire({
@@ -407,7 +406,7 @@ function editTransaction(id) {
                     })
                     .catch(error => {
                         console.error("Error updating transaction:", error);
-                        // alert('Failed to update transaction.');
+                        
                         Swal.fire({
                                 icon: 'error',
                                 title: 'Error',
@@ -463,8 +462,7 @@ function editTransaction(id) {
             function renderPagination(current, total) {
                 const maxVisible = 7;
                 let html = '';
-
-                // Previous button
+                
                 if (current > 1) {
                     html += `<li class="page-item"><a class="page-link" href="#" onclick="loadTransactions(${current - 1})">Previous</a></li>`;
                 }
@@ -492,8 +490,7 @@ function editTransaction(id) {
                     if (endPage < total - 1) html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
                     html += `<li class="page-item"><a class="page-link" href="#" onclick="loadTransactions(${total})">${total}</a></li>`;
                 }
-
-                // Next button
+                
                 if (current < total) {
                     html += `<li class="page-item"><a class="page-link" href="#" onclick="loadTransactions(${current + 1})">Next</a></li>`;
                 }
@@ -504,8 +501,7 @@ function editTransaction(id) {
 
             let currentPage = 1;
             let currentSearch = '';
-
-            // Debounce function: limits how often a function can fire
+            
             function debounce(func, delay) {
                 let timeout;
                 return function (...args) {
@@ -523,7 +519,7 @@ function editTransaction(id) {
                 if (!dateStr) return '';
                 const date = new Date(dateStr);
                 const day = String(date.getDate()).padStart(2, '0');
-                const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are zero-indexed
+                const month = String(date.getMonth() + 1).padStart(2, '0');
                 const year = date.getFullYear();
                 return `${day}-${month}-${year}`;
             }
