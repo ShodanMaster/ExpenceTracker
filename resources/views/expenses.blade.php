@@ -118,7 +118,21 @@
         </div>
     </div>
 
-    <h1>Expense</h1>
+    <div class="d-flex justify-content-between align-items-center">
+        <h1>Expense</h1>
+
+        <div class="btn-group" role="group" aria-label="Select Frequency">
+            <input type="radio" class="btn-check" name="frequency_filter" id="daily" value="daily" autocomplete="off" checked>
+            <label class="btn btn-outline-primary" for="daily">Daily</label>
+
+            <input type="radio" class="btn-check" name="frequency_filter" id="monthly" value="monthly" autocomplete="off">
+            <label class="btn btn-outline-primary" for="monthly">Monthly</label>
+
+            <input type="radio" class="btn-check" name="frequency_filter" id="yearly" value="yearly" autocomplete="off">
+            <label class="btn btn-outline-primary" for="yearly">Yearly</label>
+        </div>
+    </div>
+
 
     <div class="d-flex justify-content-between align-items-center mb-3">
         <button class="btn btn-outline-primary" onclick="changeMonth(-1)">&#8592; Prev</button>
