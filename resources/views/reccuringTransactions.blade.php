@@ -178,6 +178,26 @@
 @push('custom-scripts')
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+
+            const modals = ['#addTransactionModal', '#editTransactionModal'];
+
+            modals.forEach(modalId => {
+                const modalEl = document.querySelector(modalId);
+                if (modalEl) {
+                    modalEl.addEventListener('hidden.bs.modal', function () {
+                        const form = modalEl.querySelector('form');
+                        if (form) form.reset();
+
+                        const wrapper = modalEl.querySelector('#frequency_value_wrapper');
+                        if (wrapper) wrapper.style.display = 'none';
+
+                        // Optional: set default radio (e.g., 'debit') if needed
+                        const debitRadio = modalEl.querySelector('input[name="type"][value="debit"]');
+                        if (debitRadio) debitRadio.checked = true;
+                    });
+                }
+            });
+
             const frequency = document.getElementById('frequency');
             const wrapper = document.getElementById('frequency_value_wrapper');
             const input = document.getElementById('frequency_value');
