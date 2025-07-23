@@ -258,7 +258,7 @@
                 input: document.getElementById('frequency_value'),
                 label: document.getElementById('frequency_label')
             });
-            
+
             setupFrequencyHandler({
                 frequencySelect: document.getElementById('editFrequency'),
                 wrapper: document.getElementById('editFrequencyValueWrapper'),
@@ -311,23 +311,23 @@
                 axios.get(`/reccuring-transactions/${id}`)
                     .then(response => {
                         const txn = response.data.data;
-                        
+
                         document.getElementById('editTransactionId').value = txn.id;
                         document.getElementById('editReason').value = txn.reason?.name || '';
                         document.getElementById('editAmount').value = txn.amount;
                         document.getElementById('editDescription').value = txn.description || '';
-                        
+
                         document.getElementById('editCredit').checked = txn.type === 'credit';
                         document.getElementById('editDebit').checked = txn.type === 'debit';
-                        
+
                         const frequencySelect = document.getElementById('editFrequency');
                         frequencySelect.value = txn.frequency;
-                        
+
                         frequencySelect.dispatchEvent(new Event('change'));
-                        
+
                         setTimeout(() => {
                             const frequencyValueSelect = document.getElementById('editFrequencyValue');
-                            const val = String(txn.frequency_value); 
+                            const val = String(txn.frequency_value);
                             const foundOption = [...frequencyValueSelect.options].find(option => option.value === val);
 
                             if (foundOption) {
@@ -335,8 +335,8 @@
                             } else {
                                 console.warn(`Value '${val}' not found in options`);
                             }
-                        }, 100); 
-                        
+                        }, 100);
+
                         const modal = new bootstrap.Modal(document.getElementById('editTransactionModal'));
                         modal.show();
                     })
@@ -406,7 +406,7 @@
                     })
                     .catch(error => {
                         console.error("Error updating transaction:", error);
-                        
+
                         Swal.fire({
                                 icon: 'error',
                                 title: 'Error',
@@ -462,7 +462,7 @@
             function renderPagination(current, total) {
                 const maxVisible = 7;
                 let html = '';
-                
+
                 if (current > 1) {
                     html += `<li class="page-item"><a class="page-link" href="#" onclick="loadTransactions(${current - 1})">Previous</a></li>`;
                 }
@@ -490,7 +490,7 @@
                     if (endPage < total - 1) html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
                     html += `<li class="page-item"><a class="page-link" href="#" onclick="loadTransactions(${total})">${total}</a></li>`;
                 }
-                
+
                 if (current < total) {
                     html += `<li class="page-item"><a class="page-link" href="#" onclick="loadTransactions(${current + 1})">Next</a></li>`;
                 }
@@ -501,7 +501,7 @@
 
             let currentPage = 1;
             let currentSearch = '';
-            
+
             function debounce(func, delay) {
                 let timeout;
                 return function (...args) {
