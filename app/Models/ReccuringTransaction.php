@@ -12,6 +12,7 @@ class ReccuringTransaction extends Model
         'amount',
         'type',
         'frequency',
+        'frequency_value',
         'day_of_week',
         'day_of_month',
         'month_of_year',

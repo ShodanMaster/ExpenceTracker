@@ -307,52 +307,50 @@
                     });
             });
 
-            function editTransaction(id) {
-                axios.get(`/reccuring-transactions/${id}`)
-                    .then(response => {
-                    const txn = response.data.data;
+function editTransaction(id) {
+    axios.get(`/reccuring-transactions/${id}`)
+        .then(response => {
+            const txn = response.data.data;
 
-                    // Fill basic fields
-                    document.getElementById('editTransactionId').value = txn.id;
-                    document.getElementById('editReason').value = txn.reason?.name || '';
-                    document.getElementById('editAmount').value = txn.amount;
-                    document.getElementById('editDescription').value = txn.description || '';
+            // Fill basic fields
+            document.getElementById('editTransactionId').value = txn.id;
+            document.getElementById('editReason').value = txn.reason?.name || '';
+            document.getElementById('editAmount').value = txn.amount;
+            document.getElementById('editDescription').value = txn.description || '';
 
-                    // Type radio
-                    document.getElementById('editCredit').checked = txn.type === 'credit';
-                    document.getElementById('editDebit').checked = txn.type === 'debit';
+            // Type radio
+            document.getElementById('editCredit').checked = txn.type === 'credit';
+            document.getElementById('editDebit').checked = txn.type === 'debit';
 
-                    // Frequency
-                    const frequencySelect = document.getElementById('editFrequency');
-                    const frequencyValue = document.getElementById('editFrequencyValue');
+            // Frequency dropdown
+            const frequencySelect = document.getElementById('editFrequency');
+            frequencySelect.value = txn.frequency;
 
-                    frequencySelect.value = txn.frequency;
-                    frequencySelect.dispatchEvent(new Event('change'));
+            // Trigger change to populate frequency value options
+            frequencySelect.dispatchEvent(new Event('change'));
 
-                    document.getElementById('editFrequency').value = txn.frequency;
-                    document.getElementById('editFrequency').dispatchEvent(new Event('change'));
+            // Wait for options to render, then set selected value
+            setTimeout(() => {
+                const frequencyValueSelect = document.getElementById('editFrequencyValue');
+                const val = String(txn.frequency_value); // Always convert to string for matching
+                const foundOption = [...frequencyValueSelect.options].find(option => option.value === val);
 
-                    setTimeout(() => {
-                        const valInput = document.getElementById('editFrequencyValue');
-                        if (txn.frequency === 'weekly') {
-                            valInput.value = txn.day_of_week;
-                        } else if (txn.frequency === 'monthly') {
-                            valInput.value = txn.day_of_month;
-                        } else if (txn.frequency === 'yearly') {
-                            valInput.value = txn.month_of_year;
-                        }
-                    }, 100);
+                if (foundOption) {
+                    frequencyValueSelect.value = val;
+                } else {
+                    console.warn(`Value '${val}' not found in options`);
+                }
+            }, 100); // Slightly longer delay to ensure DOM updates
 
-
-                    // Show modal
-                    const modal = new bootstrap.Modal(document.getElementById('editTransactionModal'));
-                    modal.show();
-                })
-                .catch(error => {
-                    console.error('Error fetching transaction:', error);
-                    alert('Failed to load transaction.');
-                });
-            }
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('editTransactionModal'));
+            modal.show();
+        })
+        .catch(error => {
+            console.error('Error fetching transaction:', error);
+            alert('Failed to load transaction.');
+        });
+}
 
             document.getElementById('editTransactionForm').addEventListener('submit', function (e) {
                 e.preventDefault();
@@ -364,12 +362,14 @@
                 const frequency = document.getElementById('editFrequency').value;
                 const frequencyValue = document.getElementById('editFrequencyValue').value;
                 const description = document.getElementById('editDescription').value;
+                console.log("Frequency Value: " + frequencyValue);
 
                 const payload = {
                     type,
                     reason,
                     amount,
                     frequency,
+                    frequencyValue,
                     description
                 };
 

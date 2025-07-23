@@ -132,6 +132,7 @@ class ReccuringTransactionController extends Controller
     {
         try {
             $transaction = ReccuringTransaction::with('reason')->findOrFail($id);
+            // dd($transaction);
             return response()->json([
                 'status' => 200,
                 'data' => $transaction,
@@ -149,7 +150,7 @@ class ReccuringTransactionController extends Controller
 
     public function update(Request $request, $id)
 {
-            //dd($request->all());
+            // dd($request->all());
     $request->validate([
         'type' => 'required|in:credit,debit',
         'reason' => 'required|string',
@@ -165,6 +166,7 @@ class ReccuringTransactionController extends Controller
     $transaction->amount = $request->amount;
     $transaction->description = $request->description;
     $transaction->frequency = $request->frequency;
+    $transaction->frequency_value = $request->frequencyValue;
 
     // Reset all frequency fields
     $transaction->day_of_week = null;
@@ -174,13 +176,13 @@ class ReccuringTransactionController extends Controller
     // Set based on frequency
     switch ($request->frequency) {
         case 'weekly':
-            $transaction->day_of_week = $request->frequency_value;
+            $transaction->day_of_week = $request->frequencyValue;
             break;
         case 'monthly':
-            $transaction->day_of_month = $request->frequency_value;
+            $transaction->day_of_month = $request->frequencyValue;
             break;
         case 'yearly':
-            $transaction->month_of_year = $request->frequency_value;
+            $transaction->month_of_year = $request->frequencyValue;
             break;
         // 'daily' requires no extra value
     }
@@ -192,7 +194,7 @@ class ReccuringTransactionController extends Controller
     }
 
     $transaction->reason_id = $reason->id;
-    $transaction->next_occurence = $this->getNextDate($request->frequency, $request->frequency_value);
+    $transaction->next_occurence = $this->getNextDate($request->frequency, $request->frequencyValue);
     $transaction->save();
 
     return response()->json(['status' => 200, 'message' => 'Transaction updated successfully']);

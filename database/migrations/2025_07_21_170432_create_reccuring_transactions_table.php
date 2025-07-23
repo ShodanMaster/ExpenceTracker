@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string('description')->nullable();
             $table->enum('type', ['credit', 'debit']);
             $table->enum('frequency', ['daily', 'weekly', 'monthly', 'yearly']);
+            $table->integer('frequency_value')->nullable();
             $table->tinyInteger('day_of_week')->nullable();
             $table->tinyInteger('day_of_month')->nullable();
             $table->tinyInteger('month_of_year')->nullable();
