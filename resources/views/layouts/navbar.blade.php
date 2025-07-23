@@ -11,15 +11,21 @@
       </div>
       <div class="offcanvas-body">
         <ul class="navbar-nav justify-content-end flex-grow-1 pe-3">
-          <li class="nav-item">
-            <a class="nav-link active" aria-current="page" href="{{ route('dashboard') }}">Home</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="{{ route('expenses.index') }}">Expense</a>
-          </li>
-          <li class="nav-item">
-              <a class="nav-link" href="{{ route('reccuring-transactions.index') }}">Reccuring Transactions</a>
-          </li>
+            <li class="nav-item">
+                <a class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}" href="{{ route('dashboard') }}">
+                    Home
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {{ request()->routeIs('expenses.index') ? 'active' : '' }}" href="{{ route('expenses.index') }}">
+                    Expense
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {{ request()->routeIs('reccuring-transactions.index') ? 'active' : '' }}" href="{{ route('reccuring-transactions.index') }}">
+                    Recurring Transactions
+                </a>
+            </li>
         </ul>
         <form action="{{ route('logout') }}" class="d-flex mt-3" method="POST">
             @csrf
