@@ -25,7 +25,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::resource('reccuring-transactions', ReccuringTransactionController::class);
     Route::get('/transactions', [ReccuringTransactionController::class, 'getTransactions'])->name('reccuring-transactions.fetch');
-
+    Route::post('activate-reccuring-transaction', [ReccuringTransactionController::class, 'activate'])->name('reccuring-transactions.activate');
 });
 
 require __DIR__.'/auth.php';

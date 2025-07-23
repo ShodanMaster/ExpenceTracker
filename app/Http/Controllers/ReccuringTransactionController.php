@@ -216,6 +216,42 @@ class ReccuringTransactionController extends Controller
         }
     }
 
+    public function activate(Request $request)
+    {
+        $request->validate([
+            'id' => 'required|exists:reccuring_transactions,id',
+        ]);
+
+        try {
+
+            $transaction = ReccuringTransaction::findOrFail($request->id);
+
+            $transaction->is_active = !$transaction->is_active;
+
+            if ($transaction->is_active) {
+                $transaction->next_occurence = $this->getNextDate($transaction->frequency, $transaction->frequency_value);
+            }
+
+            $transaction->save();
+            
+            return response()->json([
+                'status' => 200,
+                'message' => $transaction->is_active
+                    ? 'Recurring transaction activated successfully.'
+                    : 'Recurring transaction deactivated successfully.',
+            ], 200);
+
+        } catch (Exception $e) {
+            Log::error("Error activating/deactivating transaction: " . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json([
+                'status' => 500,
+                'message' => 'Error processing the transaction.'
+            ], 500);
+        }
+    }
+
     private function extractFrequencyFields(string $frequency, ?string $frequencyValue): array
     {
         $dayOfWeek = null;

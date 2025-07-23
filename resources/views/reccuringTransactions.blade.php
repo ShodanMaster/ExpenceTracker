@@ -555,7 +555,12 @@
                                     <td>${txn.description || ''}</td>
                                     <td>
                                         <div class="form-check form-switch">
-                                            <input class="form-check-input" type="checkbox" ${txn.is_active ? 'checked' : ''}>
+                                            <input
+                                                class="form-check-input"
+                                                type="checkbox"
+                                                id="txnCheckbox-${txn.id}"
+                                                ${txn.is_active ? 'checked' : ''}
+                                                onchange="toggleTransaction(${txn.id}, this.checked)">
                                         </div>
                                     </td>
                                     <td class="text-nowrap">
@@ -587,9 +592,32 @@
                     });
             }
 
+            function toggleTransaction(id, isActive) {
+                axios.post('/activate-reccuring-transaction', {
+                    id: id,
+                    is_active: isActive
+                })
+                .then(response => {
+                    console.log(response.data.message);
+                    loadTransactions(currentPage);
+
+                })
+                .catch(error => {
+                    console.error('Toggle failed:', error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Failed to toggle transaction status.',
+                    });
+                    const checkbox = document.getElementById(`txnCheckbox-${id}`);
+                    if (checkbox) checkbox.checked = !isActive;
+                });
+            }
+
             window.loadTransactions = loadTransactions;
             window.deleteTransaction = deleteTransaction;
             window.editTransaction = editTransaction;
+            window.toggleTransaction = toggleTransaction;
             loadTransactions(currentPage);
         });
     </script>
