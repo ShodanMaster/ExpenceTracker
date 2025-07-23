@@ -37,6 +37,21 @@ class ReccuringTransactionController extends Controller
 
             $reason = Reason::firstOrCreate(['name' => $request->reason]);
 
+            $exists = ReccuringTransaction::where([
+                ['user_id', auth()->id()],
+                ['reason_id', $reason->id],
+                ['frequency', $request->frequency],
+                ['frequency_value', $request->frequency_value],
+                ['type', $request->type],
+            ])->exists();
+
+            if ($exists) {
+                return response()->json([
+                    'status' => 409,
+                    'message' => 'Recurring transaction with same reason, type and schedule already exists.',
+                ], 409);
+            }
+
             $frequencyFields = $this->extractFrequencyFields($request->frequency, $request->frequency_value);
 
             $transaction = array_merge([
@@ -57,8 +72,7 @@ class ReccuringTransactionController extends Controller
             return response()->json([
                 'status' => 200,
                 'message' => 'Recurring transaction created successfully.',
-            ], 200);
-
+            ]);
         } catch (ValidationException $e) {
             DB::rollBack();
 
@@ -67,11 +81,10 @@ class ReccuringTransactionController extends Controller
                 'message' => 'Validation error.',
                 'errors' => $e->errors(),
             ], 422);
-
         } catch (Exception $e) {
             DB::rollBack();
 
-            Log::error('Storing failed: ' . $e->getMessage(), [
+            Log::error('Recurring store failed: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString(),
             ]);
 
@@ -146,13 +159,12 @@ class ReccuringTransactionController extends Controller
         }
     }
 
-    public function update(Request $request, $id)
-    {
+    public function update(Request $request, $id){
 
         $request->validate([
             'type' => 'required|in:credit,debit',
             'reason' => 'required|string',
-            'amount' => 'required|numeric',
+            'amount' => 'required|numeric|min:0',
             'frequency' => 'required|in:daily,weekly,monthly,yearly',
             'description' => 'nullable|string',
             'frequency_value' => 'nullable|integer',
@@ -160,38 +172,54 @@ class ReccuringTransactionController extends Controller
 
         $transaction = ReccuringTransaction::findOrFail($id);
 
-        $transaction->type = $request->type;
-        $transaction->amount = $request->amount;
-        $transaction->description = $request->description;
-        $transaction->frequency = $request->frequency;
-        $transaction->frequency_value = $request->frequencyValue;
+        $reason = Reason::firstOrCreate(['name' => $request->reason]);
 
-        $transaction->day_of_week = null;
-        $transaction->day_of_month = null;
-        $transaction->month_of_year = null;
+        $exists = ReccuringTransaction::where('user_id', auth()->id())
+            ->where('reason_id', $reason->id)
+            ->where('frequency', $request->frequency)
+            ->where('frequency_value', $request->frequency_value)
+            ->where('type', $request->type)
+            ->where('id', '!=', $transaction->id)
+            ->exists();
+
+        if ($exists) {
+            return response()->json([
+                'status' => 409,
+                'message' => 'Recurring transaction with the same reason, type, and schedule already exists.',
+            ], 409);
+        }
+
+        $transaction->update([
+            'type' => $request->type,
+            'amount' => $request->amount,
+            'description' => $request->description,
+            'frequency' => $request->frequency,
+            'frequency_value' => $request->frequency_value,
+            'reason_id' => $reason->id,
+            'day_of_week' => null,
+            'day_of_month' => null,
+            'month_of_year' => null,
+            'next_occurence' => $this->getNextDate($request->frequency, $request->frequency_value),
+        ]);
 
         switch ($request->frequency) {
             case 'weekly':
-                $transaction->day_of_week = $request->frequencyValue;
+                $transaction->day_of_week = $request->frequency_value;
                 break;
             case 'monthly':
-                $transaction->day_of_month = $request->frequencyValue;
+                $transaction->day_of_month = $request->frequency_value;
                 break;
             case 'yearly':
-                $transaction->month_of_year = $request->frequencyValue;
+                $transaction->month_of_year = $request->frequency_value;
                 break;
         }
 
-        $reason = Reason::where('name', $request->reason)->first();
-        if (!$reason) {
-            return response()->json(['message' => 'Reason not found'], 404);
-        }
-
-        $transaction->reason_id = $reason->id;
-        $transaction->next_occurence = $this->getNextDate($request->frequency, $request->frequencyValue);
         $transaction->save();
 
-        return response()->json(['status' => 200, 'message' => 'Transaction updated successfully']);
+        return response()->json([
+            'status' => 200,
+            'message' => 'Recurring transaction updated successfully.',
+        ]);
     }
 
     public function destroy($id)
@@ -233,7 +261,7 @@ class ReccuringTransactionController extends Controller
             }
 
             $transaction->save();
-            
+
             return response()->json([
                 'status' => 200,
                 'message' => $transaction->is_active

@@ -142,15 +142,15 @@
 <div class="d-flex justify-content-between mb-3">
     <h1>Reccuring Transactions</h1>
 
-    <div class="input-group mb-3 w-50">
-        <input type="text" class="form-control" id="searchInput" placeholder="Search by reason, type, frequency...">
-    </div>
+
 
     <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addTransactionModal">
         Add Transaction
     </button>
 </div>
-
+<div class="input-group mb-3 w-50">
+        <input type="text" class="form-control" id="searchInput" placeholder="Search by reason, type, frequency...">
+    </div>
 <div class="table-responsive">
     <table class="table table-striped" id="reccuringTransactionsTable">
         <thead>
@@ -297,12 +297,15 @@
                             });
                         }
                     })
-                    .catch(() => {
+                    .catch(error => {
+                        console.error("Error storing transaction:", error);
+
+                        const message = error.response?.data?.message || 'Failed to store transaction.';
+
                         Swal.fire({
                             icon: 'error',
                             title: 'Error',
-                            text: 'An error occurred while adding the transaction.',
-                            showConfirmButton: true,
+                            text: message,
                         });
                     });
             });
@@ -407,14 +410,15 @@
                     .catch(error => {
                         console.error("Error updating transaction:", error);
 
+                        const message = error.response?.data?.message || 'Failed to update transaction.';
+
                         Swal.fire({
-                                icon: 'error',
-                                title: 'Error',
-                                text: 'Failed to update transaction.',
-                            });
+                            icon: 'error',
+                            title: 'Error',
+                            text: message,
+                        });
                     });
             });
-
 
             function deleteTransaction(id) {
                 Swal.fire({
