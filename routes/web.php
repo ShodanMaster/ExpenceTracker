@@ -22,7 +22,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::resource('expenses', ExpenseController::class);
     Route::get('get-expenses/{date}', [ExpenseController::class, 'getExpenses'])->name('getexpenses');
-    Route::get('get-monthly-summary/{month}', [ExpenseController::class, 'getMonthlySummary'])->name('getmohnthlysummary');
+    Route::get('get-monthly-summary/{month}', [ExpenseController::class, 'getMonthlySummary'])->name('getmonthlysummary');
+    Route::get('get-yearly-summary/{year}', [ExpenseController::class, 'getYearlySummary'])->name('getyearlysummary');
 
     Route::resource('reccuring-transactions', ReccuringTransactionController::class);
     Route::get('/transactions', [ReccuringTransactionController::class, 'getTransactions'])->name('reccuring-transactions.fetch');

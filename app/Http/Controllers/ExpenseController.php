@@ -283,6 +283,81 @@ class ExpenseController extends Controller
         }
     }
 
+    public function getYearlySummary($year)
+    {
+        try {
+            $userId = auth()->id();
+            $formattedYear = (int) $year;
+
+            $expenses = Expense::where('user_id', $userId)
+                ->whereYear('date', $formattedYear)
+                ->with('reason')
+                ->orderBy('date')
+                ->get();
+
+            $groupedByMonth = $expenses->groupBy(function ($item) {
+                return Carbon::parse($item->date)->format('Y-m');
+            });
+
+            $grouped = [];
+            foreach ($groupedByMonth as $month => $items) {
+                $monthlyCredit = [];
+                $monthlyDebit = [];
+                $totalCredit = 0;
+                $totalDebit = 0;
+
+                foreach ($items as $txn) {
+                    $reason = optional($txn->reason)->name ?? 'Unknown';
+                    $amount = (float) $txn->amount;
+
+                    if ($txn->type === 'credit') {
+                        $monthlyCredit[$reason] = ($monthlyCredit[$reason] ?? 0) + $amount;
+                        $totalCredit += $amount;
+                    } else {
+                        $monthlyDebit[$reason] = ($monthlyDebit[$reason] ?? 0) + $amount;
+                        $totalDebit += $amount;
+                    }
+                }
+
+                $grouped[] = [
+                    'month' => date('F', strtotime($month)),
+                    'credit' => collect($monthlyCredit)->map(fn($amount, $reason) => [
+                        'reason' => $reason,
+                        'amount' => round($amount, 2),
+                    ])->values(),
+
+                    'debit' => collect($monthlyDebit)->map(fn($amount, $reason) => [
+                        'reason' => $reason,
+                        'amount' => round($amount, 2),
+                    ])->values(),
+
+                    'total_credit' => round($totalCredit, 2),
+                    'total_debit' => round($totalDebit, 2),
+                    'balance' => round($totalCredit - $totalDebit, 2)
+                ];
+            }
+            // dd($formattedYear, $grouped);
+            return response()->json([
+                'status' => 200,
+                'year' => $formattedYear,
+                'data' => [
+                    'grouped_by_month' => array_reverse($grouped)
+                ],
+            ], 200);
+
+        } catch (Exception $e) {
+            Log::error('Yearly expenses fetch failed: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'status' => 500,
+                'message' => 'Error retrieving yearly expenses.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
     /**
      * Display the specified resource.
      */

@@ -290,8 +290,22 @@
 
     </div>
 
-    <div id="yearly-content" class="d-none">
-        Yearly
+    <div id="yearly-content" class="d-none table-responsive">
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Month</th>
+                    <th>Total Income (Credit)</th>
+                    <th>Total Expense (Debit)</th>
+                    <th>Balance</th>
+                    <th>Credit Details</th>
+                    <th>Debit Details</th>
+                </tr>
+            </thead>
+            <tbody id="yearly-summary-body">
+                <!-- Yearly summary rows will be injected here -->
+            </tbody>
+        </table>
     </div>
 
 @endsection
@@ -302,6 +316,21 @@
     let selectedElement = null;
     let formattedDate = formatDateToYYYYMMDD(currentDate);
     fetchExpense(formattedDate);
+
+    const modals = ['#addModal', '#editModal'];
+
+    modals.forEach(modalId => {
+        const modalEl = document.querySelector(modalId);
+        if (modalEl) {
+            modalEl.addEventListener('hidden.bs.modal', function () {
+                const form = modalEl.querySelector('form');
+                if (form) form.reset();
+
+                const debitRadio = modalEl.querySelector('input[name="type"][value="debit"]');
+                if (debitRadio) debitRadio.checked = true;
+            });
+        }
+    });
 
     document.querySelectorAll('input[name="frequency_filter"]').forEach((radio) => {
         radio.addEventListener('change', function () {
@@ -324,12 +353,15 @@
                 case 'monthly':
                     document.getElementById('monthly-content').classList.remove('d-none');
                     document.getElementById('pdf-button').classList.remove('d-none');
+                    renderCalendar(currentDate);
                     fetchMonthlySummary(currentDate);
                     break;
 
                 case 'yearly':
                     document.getElementById('yearly-content').classList.remove('d-none');
                     document.getElementById('pdf-button').classList.remove('d-none');
+                    document.getElementById("monthYear").textContent = currentDate.getFullYear();
+                    fetchYearlySummary(currentDate.getFullYear());
                     break;
             }
         });
@@ -355,9 +387,16 @@
         return `${yyyy}-${mm}`;
     }
 
-    function renderCalendar(date) {
+    function renderCalendar(date, frequency) {
         const calendar = document.getElementById("calendar");
         calendar.innerHTML = "";
+
+        if (frequency === 'yearly') {
+            // Just show the year, no calendar grid
+            document.getElementById("monthYear").textContent = date.getFullYear();
+            calendar.innerHTML = `<div class="text-center py-4">Year view - no calendar grid</div>`;
+            return;
+        }
 
         const year = date.getFullYear();
         const month = date.getMonth();
@@ -439,15 +478,23 @@
     }
 
     function changeMonth(offset) {
-        currentDate.setMonth(currentDate.getMonth() + offset);
-        selectedElement = null;
-        renderCalendar(currentDate);
-
         const selectedFrequency = document.querySelector('input[name="frequency_filter"]:checked')?.value;
+
+        if (selectedFrequency === 'yearly') {
+            currentDate.setFullYear(currentDate.getFullYear() + offset);
+        } else {
+            currentDate.setMonth(currentDate.getMonth() + offset);
+        }
+
+        selectedElement = null;
+        renderCalendar(currentDate, selectedFrequency);
 
         if (selectedFrequency === 'monthly') {
             fetchMonthlySummary(currentDate);
             updateReportModalContext(currentDate, 'monthly');
+        } else if (selectedFrequency === 'yearly') {
+            fetchYearlySummary(currentDate.getFullYear());
+            updateReportModalContext(currentDate, 'yearly');
         } else if (selectedFrequency === 'daily') {
             fetchExpense(formatDateToYYYYMMDD(currentDate));
         }
@@ -520,6 +567,42 @@
             });
     }
 
+    function renderYearlySummary(data) {
+        const container = document.getElementById('yearly-content');
+        container.classList.remove('d-none');
+
+        const tbody = document.getElementById('yearly-summary-body');
+        tbody.innerHTML = ''; // clear previous rows
+
+        // Check if there are any details to show
+        if (!data.grouped_by_month || data.grouped_by_month.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="6" class="text-center">No details available.</td></tr>`;
+            return;
+        }
+
+        data.grouped_by_month.forEach(entry => {
+            // Summarized reason-based credit/debit breakdown
+            const creditDetails = entry.credit.map(c =>
+                `${c.reason || 'N/A'}: $${c.amount.toFixed(2)}`
+            ).join('<br>');
+
+            const debitDetails = entry.debit.map(d =>
+                `${d.reason || 'N/A'}: $${d.amount.toFixed(2)}`
+            ).join('<br>');
+
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${entry.month}</td>
+                <td>${entry.total_credit.toFixed(2)}</td>
+                <td>${entry.total_debit.toFixed(2)}</td>
+                <td>${entry.balance.toFixed(2)}</td>
+                <td>${creditDetails || '—'}</td>
+                <td>${debitDetails || '—'}</td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
+
     function renderTransactionList(list, elementId, color) {
         const container = document.getElementById(elementId);
         if (!list || list.length === 0) {
@@ -560,7 +643,6 @@
         const month = formatDateToYYYYMM(date);
         axios.get('/get-monthly-summary/' + month)
             .then(response => {
-                console.log(response.data.data);
 
                 if (response.data.status === 200) {
                     renderMonthlySummary(response.data.data);
