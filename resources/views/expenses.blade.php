@@ -143,7 +143,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <form id="reportForm">
-                    <input type="hidden" name="expenseMonth" id="report-expense-month">
+                    <input type="hidden" name="expensePeriod" id="report-expense-period">
                     <div class="modal-body">
                         <div class="mb-3">
                             <label class="form-label fw-bold">Transaction Type</label>
@@ -504,7 +504,7 @@
         if (!currentDate || !frequency) return;
 
         const labelEl = document.getElementById('reportModalLabel');
-        const inputEl = document.getElementById('report-expense-month');
+        const inputEl = document.getElementById('report-expense-period');
 
         if (!labelEl || !inputEl) return;
 
@@ -925,12 +925,12 @@
         e.preventDefault();
         console.log('inside');
 
-        const month = document.getElementById('report-expense-month').value;
+        const period = document.getElementById('report-expense-period').value;
         const transactionType = document.querySelector('input[name="transaction_type"]:checked').value;
         const format = document.querySelector('input[name="format"]:checked').value;
 
         axios.post('/report', {
-            month: month,
+            period: period,
             transaction_type: transactionType,
             format: format,
         }, {

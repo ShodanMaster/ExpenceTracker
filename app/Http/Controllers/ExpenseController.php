@@ -570,19 +570,18 @@ class ExpenseController extends Controller
 
     public function generateReport(Request $request)
     {
-        dd($request->all());
         try {
             $request->validate([
-                'expenseMonth' => 'required|date_format:Y-m',
+                'period' => 'required|date_format:Y-m',
                 'transaction_type' => ['required', Rule::in(['credit', 'debit'])],
                 'format' => ['required', Rule::in(['pdf', 'csv'])],
             ]);
 
-            $month = Carbon::parse($request->expenseMonth)->format('Y-m');
+            $period = Carbon::parse($request->period)->format('Y-m');
             $transactionType = $request->transaction_type;
             $format = $request->format;
 
-            // Logic to generate report based on the month, transaction type, and format
+            // Logic to generate report based on the period, transaction type, and format
             // ...
 
             return response()->json([
