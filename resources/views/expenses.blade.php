@@ -20,7 +20,7 @@
     <div id="pdf-button" class="d-none">
         <button type="button"
             class="btn btn-danger rounded-circle position-fixed bottom-0 end-0 m-3 d-flex align-items-center justify-content-center shadow"
-            onclick="exportToPDF()"
+
             style="width: 56px; height: 56px; z-index: 1055;">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor"
                 class="bi bi-filetype-pdf" viewBox="0 0 16 16">
@@ -134,6 +134,9 @@
             </div>
         </div>
     </div>
+
+    <!-- PDF Modalt -->
+
 
     <div class="d-flex justify-content-between align-items-center">
         <h1>Expense</h1>
@@ -389,7 +392,16 @@
         currentDate.setMonth(currentDate.getMonth() + offset);
         selectedElement = null;
         renderCalendar(currentDate);
+
+        const selectedFrequency = document.querySelector('input[name="frequency_filter"]:checked')?.value;
+
+        if (selectedFrequency === 'monthly') {
+            fetchMonthlySummary(currentDate);
+        } else if (selectedFrequency === 'daily') {
+            fetchExpense(formatDateToYYYYMMDD(currentDate));
+        }
     }
+
 
     renderCalendar(currentDate);
 
