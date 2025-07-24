@@ -198,7 +198,7 @@ class ExpenseController extends Controller
         try {
             $userId = auth()->id();
             $formattedMonth = date('Y-m', strtotime($month));
-            
+
             $expenses = Expense::where('user_id', $userId)
                 ->whereMonth('date', date('m', strtotime($month)))
                 ->whereYear('date', date('Y', strtotime($month)))
@@ -489,6 +489,47 @@ class ExpenseController extends Controller
             return response()->json([
                 'status' => 500,
                 'message' => 'Failed to delete expense',
+            ], 500);
+        }
+    }
+
+    public function generateReport(Request $request)
+    {
+        dd($request->all());
+        try {
+            $request->validate([
+                'expenseMonth' => 'required|date_format:Y-m',
+                'transaction_type' => ['required', Rule::in(['credit', 'debit'])],
+                'format' => ['required', Rule::in(['pdf', 'csv'])],
+            ]);
+
+            $month = Carbon::parse($request->expenseMonth)->format('Y-m');
+            $transactionType = $request->transaction_type;
+            $format = $request->format;
+
+            // Logic to generate report based on the month, transaction type, and format
+            // ...
+
+            return response()->json([
+                'status' => 200,
+                'message' => 'Report generated successfully',
+                // Include report data or file link here
+            ]);
+
+        } catch (ValidationException $e) {
+            return response()->json([
+                'status' => 422,
+                'message' => 'Validation error.',
+                'errors' => $e->errors(),
+            ], 422);
+
+        } catch (Exception $e) {
+            Log::error('Report generation failed: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return response()->json([
+                'status' => 500,
+                'message' => 'Report generation failed. Please try again later.',
             ], 500);
         }
     }

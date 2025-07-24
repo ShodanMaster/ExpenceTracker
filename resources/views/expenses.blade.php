@@ -20,12 +20,11 @@
     <div id="pdf-button" class="d-none">
         <button type="button"
             class="btn btn-danger rounded-circle position-fixed bottom-0 end-0 m-3 d-flex align-items-center justify-content-center shadow"
-
+            data-bs-toggle="modal" data-bs-target="#reportModal"
             style="width: 56px; height: 56px; z-index: 1055;">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor"
-                class="bi bi-filetype-pdf" viewBox="0 0 16 16">
-                <path fill-rule="evenodd"
-                    d="M14 4.5V14a2 2 0 0 1-2 2h-1v-1h1a1 1 0 0 0 1-1V4.5h-2A1.5 1.5 0 0 1 9.5 3V1H4a1 1 0 0 0-1 1v9H2V2a2 2 0 0 1 2-2h5.5zM1.6 11.85H0v3.999h.791v-1.342h.803q.43 0 .732-.173.305-.175.463-.474a1.4 1.4 0 0 0 .161-.677q0-.375-.158-.677a1.2 1.2 0 0 0-.46-.477q-.3-.18-.732-.179m.545 1.333a.8.8 0 0 1-.085.38.57.57 0 0 1-.238.241.8.8 0 0 1-.375.082H.788V12.48h.66q.327 0 .512.181.185.183.185.522m1.217-1.333v3.999h1.46q.602 0 .998-.237a1.45 1.45 0 0 0 .595-.689q.196-.45.196-1.084 0-.63-.196-1.075a1.43 1.43 0 0 0-.589-.68q-.396-.234-1.005-.234zm.791.645h.563q.371 0 .609.152a.9.9 0 0 1 .354.454q.118.302.118.753a2.3 2.3 0 0 1-.068.592 1.1 1.1 0 0 1-.196.422.8.8 0 0 1-.334.252 1.3 1.3 0 0 1-.483.082h-.563zm3.743 1.763v1.591h-.79V11.85h2.548v.653H7.896v1.117h1.606v.638z" />
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-file-earmark-arrow-down" viewBox="0 0 16 16">
+                <path d="M8.5 6.5a.5.5 0 0 0-1 0v3.793L6.354 9.146a.5.5 0 1 0-.708.708l2 2a.5.5 0 0 0 .708 0l2-2a.5.5 0 0 0-.708-.708L8.5 10.293z"/>
+                <path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2M9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5z"/>
             </svg>
         </button>
     </div>
@@ -136,7 +135,58 @@
     </div>
 
     <!-- PDF Modalt -->
+    <div class="modal fade" id="reportModal" tabindex="-1" aria-labelledby="reportModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-dark text-white">
+                    <h1 class="modal-title fs-5" id="reportModalLabel"></h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="reportForm">
+                    <input type="hidden" name="expenseMonth" id="report-expense-month">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Transaction Type</label>
+                            <div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="transaction_type" id="both" value="both" checked>
+                                    <label class="form-check-label" for="both">Both</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="transaction_type" id="credit" value="credit">
+                                    <label class="form-check-label" for="credit">Credit</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="transaction_type" id="debit" value="debit">
+                                    <label class="form-check-label" for="debit">Debit</label>
+                                </div>
+                            </div>
+                        </div>
 
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Export Format</label>
+                            <div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="format" id="pdf" value="pdf" checked>
+                                    <label class="form-check-label" for="pdf">PDF</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="format" id="excel" value="excel">
+                                    <label class="form-check-label" for="excel">Excel</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer bg-dark">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Export</button>
+                    </div>
+                </form>
+
+            </div>
+        </div>
+    </div>
 
     <div class="d-flex justify-content-between align-items-center">
         <h1>Expense</h1>
@@ -397,11 +447,36 @@
 
         if (selectedFrequency === 'monthly') {
             fetchMonthlySummary(currentDate);
+            updateReportModalContext(currentDate, 'monthly');
         } else if (selectedFrequency === 'daily') {
             fetchExpense(formatDateToYYYYMMDD(currentDate));
         }
     }
 
+    function updateReportModalContext(currentDate, frequency) {
+        if (!currentDate || !frequency) return;
+
+        const labelEl = document.getElementById('reportModalLabel');
+        const inputEl = document.getElementById('report-expense-month');
+
+        if (!labelEl || !inputEl) return;
+
+        if (frequency === 'monthly') {
+            const monthStr = currentDate.toLocaleString('default', { month: 'long' }); // "July"
+            const year = currentDate.getFullYear(); // 2025
+            labelEl.textContent = `${monthStr} ${year} Report`; // "Month: July 2025 Report"
+            inputEl.value = `${year}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`; // "2025-07"
+        } else if (frequency === 'yearly') {
+            const yearStr = currentDate.getFullYear(); // "2025"
+            labelEl.textContent = `Year: ${yearStr} Report`;
+            inputEl.value = yearStr;
+        }
+    }
+
+    document.querySelector('[data-bs-target="#reportModal"]').addEventListener('click', function () {
+        const selectedFrequency = document.querySelector('input[name="frequency_filter"]:checked')?.value;
+        updateReportModalContext(currentDate, selectedFrequency);
+    });
 
     renderCalendar(currentDate);
 
@@ -764,5 +839,51 @@
         });
     }
 
+    document.getElementById('reportForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        console.log('inside');
+
+        const month = document.getElementById('report-expense-month').value;
+        const transactionType = document.querySelector('input[name="transaction_type"]:checked').value;
+        const format = document.querySelector('input[name="format"]:checked').value;
+
+        axios.post('/report', {
+            month: month,
+            transaction_type: transactionType,
+            format: format,
+        }, {
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            responseType: 'blob' // Important for file download
+        })
+        .then(response => {
+            const blob = new Blob([response.data], { type: response.headers['content-type'] });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `expenses-${month}.${format}`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+            Swal.fire({
+                icon: 'success',
+                title: 'Exported',
+                text: `Expenses for ${month} exported successfully.`,
+                showConfirmButton: false,
+                timer: 2000,
+                timerProgressBar: true,
+            });
+        })
+        .catch(error => {
+            console.error('Error exporting expenses:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'An error occurred while exporting expenses.',
+            });
+        });
+    });
 </script>
 @endpush
