@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Expense;
 use App\Models\Reason;
+use Carbon\Carbon;
 use Exception;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Validation\ValidationException;
@@ -56,7 +57,7 @@ class ExpenseController extends Controller
                 'reason_id' => $reason->id,
                 'amount' => $request->amount,
                 'description' => $request->description,
-                'carry_forward' => 0, // Temporary
+                'carry_forward' => 0,
             ]);
 
             $expenses = Expense::where('user_id', auth()->id())
@@ -150,7 +151,7 @@ class ExpenseController extends Controller
                 ->sum('amount');
 
             $balance = $creditSum - $debitSum;
-            // dd($creditSum);
+
             $creditBefore = Expense::where('user_id', $userId)
                 ->whereDate('date', '<', $date)
                 ->where('type', 'credit')
@@ -170,8 +171,6 @@ class ExpenseController extends Controller
                 'carry_forward' => $this->formatIndianNumber($carryForwardBalance),
             ];
 
-            // dd($data['balance']);
-
             return response()->json([
                 'status' => 200,
                 'date' => $formattedDate,
@@ -189,6 +188,96 @@ class ExpenseController extends Controller
             return response()->json([
                 'status' => 500,
                 'message' => 'Error retrieving expenses.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function getMonthlySummary($month)
+    {
+        try {
+            $userId = auth()->id();
+            $formattedMonth = date('Y-m', strtotime($month));
+            
+            $expenses = Expense::where('user_id', $userId)
+                ->whereMonth('date', date('m', strtotime($month)))
+                ->whereYear('date', date('Y', strtotime($month)))
+                ->with('reason')
+                ->orderBy('date')
+                ->get();
+
+            $groupedByDate = $expenses->groupBy(function ($item) {
+                return Carbon::parse($item->date)->format('Y-m-d');
+            });
+
+            $grouped = [];
+            $dailyBalance = 0;
+            foreach ($groupedByDate as $date => $items) {
+                $creditList = [];
+                $debitList = [];
+                $dailyCredit = 0;
+                $dailyDebit = 0;
+
+                foreach ($items as $txn) {
+                    $formattedTxn = [
+                        'reason' => optional($txn->reason)->name,
+                        'amount' => (float) $txn->amount
+                    ];
+
+                    if ($txn->type === 'credit') {
+                        $creditList[] = $formattedTxn;
+                        $dailyCredit += $txn->amount;
+                    } else {
+                        $debitList[] = $formattedTxn;
+                        $dailyDebit += $txn->amount;
+                    }
+                }
+
+                $dailyBalance += $dailyCredit - $dailyDebit;
+
+                $grouped[] = [
+                    'date_formatted' => date('d M Y', strtotime($date)),
+                    'credit' => $creditList,
+                    'debit' => $debitList,
+                    'balance' => $dailyBalance
+                ];
+            }
+
+            $creditSum = $expenses->where('type', 'credit')->sum('amount');
+            $debitSum = $expenses->where('type', 'debit')->sum('amount');
+
+            $carryForward = Expense::where('user_id', $userId)
+                ->whereDate('date', '<', date('Y-m-01', strtotime($month)))
+                ->selectRaw("SUM(CASE WHEN type = 'credit' THEN amount ELSE 0 END) - SUM(CASE WHEN type = 'debit' THEN amount ELSE 0 END) as balance")
+                ->value('balance') ?? 0;
+
+            $finalBalance = $carryForward + $creditSum - $debitSum;
+
+            $grouped = array_reverse($grouped);
+
+            return response()->json([
+                'status' => 200,
+                'month' => $formattedMonth,
+                'debit_count' => $expenses->where('type', 'debit')->count(),
+                'credit_count' => $expenses->where('type', 'credit')->count(),
+                'total_transactions' => $expenses->count(),
+                'data' => [
+                    'total_credit' => round($creditSum, 2),
+                    'total_debit' => round($debitSum, 2),
+                    'carry_forward' => round($carryForward, 2),
+                    'balance' => round($finalBalance, 2),
+                    'grouped_by_date' => $grouped
+                ],
+            ], 200);
+
+        } catch (Exception $e) {
+            Log::error('Monthly expenses fetch failed: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'status' => 500,
+                'message' => 'Error retrieving monthly expenses.',
                 'error' => $e->getMessage(),
             ], 500);
         }

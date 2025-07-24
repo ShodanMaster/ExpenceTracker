@@ -1,17 +1,34 @@
 @extends('layouts.master')
 @section('content')
 
-    <button type="button"
-        class="btn btn-primary rounded-circle position-fixed bottom-0 end-0 m-3 d-flex align-items-center justify-content-center shadow"
-        data-bs-toggle="modal"
-        data-bs-target="#addModal"
-        style="width: 56px; height: 56px; z-index: 1055;">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor"
-            class="bi bi-plus-lg" viewBox="0 0 16 16">
-            <path fill-rule="evenodd"
-                d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2" />
-        </svg>
-    </button>
+    <!-- Floating + Button for Daily -->
+    <div id="daily-button">
+        <button type="button"
+            class="btn btn-primary rounded-circle position-fixed bottom-0 end-0 m-3 d-flex align-items-center justify-content-center shadow"
+            data-bs-toggle="modal"
+            data-bs-target="#addModal"
+            style="width: 56px; height: 56px; z-index: 1055;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor"
+                class="bi bi-plus-lg" viewBox="0 0 16 16">
+                <path fill-rule="evenodd"
+                    d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2" />
+            </svg>
+        </button>
+    </div>
+
+    <!-- Export PDF Button for Monthly/Yearly -->
+    <div id="pdf-button" class="d-none">
+        <button type="button"
+            class="btn btn-danger rounded-circle position-fixed bottom-0 end-0 m-3 d-flex align-items-center justify-content-center shadow"
+            onclick="exportToPDF()"
+            style="width: 56px; height: 56px; z-index: 1055;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor"
+                class="bi bi-filetype-pdf" viewBox="0 0 16 16">
+                <path fill-rule="evenodd"
+                    d="M14 4.5V14a2 2 0 0 1-2 2h-1v-1h1a1 1 0 0 0 1-1V4.5h-2A1.5 1.5 0 0 1 9.5 3V1H4a1 1 0 0 0-1 1v9H2V2a2 2 0 0 1 2-2h5.5zM1.6 11.85H0v3.999h.791v-1.342h.803q.43 0 .732-.173.305-.175.463-.474a1.4 1.4 0 0 0 .161-.677q0-.375-.158-.677a1.2 1.2 0 0 0-.46-.477q-.3-.18-.732-.179m.545 1.333a.8.8 0 0 1-.085.38.57.57 0 0 1-.238.241.8.8 0 0 1-.375.082H.788V12.48h.66q.327 0 .512.181.185.183.185.522m1.217-1.333v3.999h1.46q.602 0 .998-.237a1.45 1.45 0 0 0 .595-.689q.196-.45.196-1.084 0-.63-.196-1.075a1.43 1.43 0 0 0-.589-.68q-.396-.234-1.005-.234zm.791.645h.563q.371 0 .609.152a.9.9 0 0 1 .354.454q.118.302.118.753a2.3 2.3 0 0 1-.068.592 1.1 1.1 0 0 1-.196.422.8.8 0 0 1-.334.252 1.3 1.3 0 0 1-.483.082h-.563zm3.743 1.763v1.591h-.79V11.85h2.548v.653H7.896v1.117h1.606v.638z" />
+            </svg>
+        </button>
+    </div>
 
     <!-- Add Modal -->
     <div class="modal fade" id="addModal" tabindex="-1" aria-labelledby="addModalLabel" aria-hidden="true">
@@ -140,64 +157,88 @@
         <button class="btn btn-outline-primary" onclick="changeMonth(1)">Next &#8594;</button>
     </div>
 
-    <div class="row text-center fw-bold border-bottom pb-2">
-        <div class="col">Sun</div>
-        <div class="col">Mon</div>
-        <div class="col">Tue</div>
-        <div class="col">Wed</div>
-        <div class="col">Thu</div>
-        <div class="col">Fri</div>
-        <div class="col">Sat</div>
-    </div>
-
-    <div id="calendar" class="mt-2"></div>
-    <hr>
-
-    <div class="d-flex justify-content-between">
-        <div>
-            <h3>Balance:
-                <strong id="balance"></strong>
-            </h3>
+    <div id="daily-content">
+        <div class="row text-center fw-bold border-bottom pb-2">
+            <div class="col">Sun</div>
+            <div class="col">Mon</div>
+            <div class="col">Tue</div>
+            <div class="col">Wed</div>
+            <div class="col">Thu</div>
+            <div class="col">Fri</div>
+            <div class="col">Sat</div>
         </div>
-        <div>
-            <h3>C/F:
-                <strong id="carry-forward"></strong>
-            </h3>
-        </div>
-    </div>
 
-    <div class="card d-none mt-4" id="expense">
-        <div class="card-header text-white text-center bg-dark fs-4 d-flex justify-content-between">
-            <span id="title-expense-date"></span>
-            <span id="total-transcations"></span>
+        <div id="calendar" class="mt-2"></div>
+        <hr>
+
+        <div class="d-flex justify-content-between">
+            <div>
+                <h3>Balance:
+                    <strong id="balance"></strong>
+                </h3>
+            </div>
+            <div>
+                <h3>C/F:
+                    <strong id="carry-forward"></strong>
+                </h3>
+            </div>
         </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <div class="card border-success">
-                        <div class="card-header bg-success text-white d-flex justify-content-between">
-                            Credits
-                            <span id="total-credits"></span>
-                        </div>
-                        <div class="card-body">
-                            <ul id="creditList" class="list-group list-group-flush"></ul>
+
+        <div class="card mt-4" id="expense">
+            <div class="card-header text-white text-center bg-dark fs-4 d-flex justify-content-between">
+                <span id="title-expense-date"></span>
+                <span id="total-transcations"></span>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="card border-success">
+                            <div class="card-header bg-success text-white d-flex justify-content-between">
+                                Credits
+                                <span id="total-credits"></span>
+                            </div>
+                            <div class="card-body">
+                                <ul id="creditList" class="list-group list-group-flush"></ul>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <div class="col-md-6">
-                    <div class="card border-danger">
-                        <div class="card-header bg-danger text-white d-flex justify-content-between">
-                            Debits
-                            <span id="total-debits"></span>
-                        </div>
-                        <div class="card-body">
-                            <ul id="debitList" class="list-group list-group-flush"></ul>
+                    <div class="col-md-6">
+                        <div class="card border-danger">
+                            <div class="card-header bg-danger text-white d-flex justify-content-between">
+                                Debits
+                                <span id="total-debits"></span>
+                            </div>
+                            <div class="card-body">
+                                <ul id="debitList" class="list-group list-group-flush"></ul>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
+
+    <div id="monthly-content" class="d-none">
+        <div class="card bg-light p-3 mb-3">
+            <div class="d-flex justify-content-between">
+                <div>
+                <div><strong>Total Income (Credit)</strong><br><span id="monthly-credit">₹0.00</span></div>
+                <div class="mt-2">C/F<br><strong id="monthly-cf">₹0.00</strong></div>
+                </div>
+                <div class="text-end">
+                <div><strong>Total Expense (Debit)</strong><br><span id="monthly-debit">₹0.00</span></div>
+                <div class="mt-2">Balance<br><strong id="monthly-balance">₹0.00</strong></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="monthly-summary-container"></div>
+
+    </div>
+
+    <div id="yearly-content" class="d-none">
+        Yearly
     </div>
 
 @endsection
@@ -208,6 +249,38 @@
     let selectedElement = null;
     let formattedDate = formatDateToYYYYMMDD(currentDate);
     fetchExpense(formattedDate);
+
+    document.querySelectorAll('input[name="frequency_filter"]').forEach((radio) => {
+        radio.addEventListener('change', function () {
+            const frequency = this.value;
+
+            ['daily-content', 'monthly-content', 'yearly-content'].forEach(id =>
+                document.getElementById(id).classList.add('d-none')
+            );
+            document.getElementById('daily-button').classList.add('d-none');
+            document.getElementById('pdf-button').classList.add('d-none');
+
+            switch (frequency) {
+                case 'daily':
+                    document.getElementById('daily-content').classList.remove('d-none');
+                    document.getElementById('daily-button').classList.remove('d-none');
+                    renderCalendar(currentDate);
+                    fetchExpense(formatDateToYYYYMMDD(currentDate));
+                    break;
+
+                case 'monthly':
+                    document.getElementById('monthly-content').classList.remove('d-none');
+                    document.getElementById('pdf-button').classList.remove('d-none');
+                    fetchMonthlySummary(currentDate);
+                    break;
+
+                case 'yearly':
+                    document.getElementById('yearly-content').classList.remove('d-none');
+                    document.getElementById('pdf-button').classList.remove('d-none');
+                    break;
+            }
+        });
+    });
 
     function formatDateToDDMMYYYY(date) {
         const day = String(date.getDate()).padStart(2, '0');
@@ -223,6 +296,11 @@
         return `${yyyy}-${mm}-${dd}`;
     }
 
+    function formatDateToYYYYMM(date) {
+        const yyyy = date.getFullYear();
+        const mm = String(date.getMonth() + 1).padStart(2, '0');
+        return `${yyyy}-${mm}`;
+    }
 
     function renderCalendar(date) {
         const calendar = document.getElementById("calendar");
@@ -316,12 +394,9 @@
     renderCalendar(currentDate);
 
     function fetchExpense(date) {
-
         axios.get('/get-expenses/' + date)
             .then(response => {
                 const res = response.data;
-                // console.log(res.data.balance);
-
                 if (res.status === 200) {
                     const data = res.data;
 
@@ -332,84 +407,143 @@
                     document.getElementById('total-credits').textContent = "Total Credits: " + res.credit_count;
                     document.getElementById('total-debits').textContent = "Total Debits: " + res.debit_count;
 
-                    const debitList = data.debit || [];
-                    const creditList = data.credit || [];
-
-                    if (creditList.length === 0) {
-                        document.getElementById('creditList').innerHTML =
-                            `<li class="list-group-item text-center text-muted">No Credit Data</li>`;
-                    } else {
-
-                        document.getElementById('creditList').innerHTML = creditList.map((item, index) =>
-                            `<li class="list-group-item d-flex justify-content-between align-items-center">
-                                <div>
-                                    <span>${item.reason}</span>
-                                </div>
-                                <div class="d-flex align-items-center gap-2">
-                                    <span class="text-success fw-semibold">₹${item.amount}</span>
-                                    <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editModal" onclick="editExpense(${item.id}, ${item.amount}, '${item.reason}', ${JSON.stringify(item.description)}, '${item.type}', '${item.date}')">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pencil" viewBox="0 0 16 16">
-                                            <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325"/>
-                                        </svg>
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteExpense(${item.id})">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16">
-                                            <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/>
-                                            <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z"/>
-                                        </svg>
-                                    </button>
-                                </div>
-                            </li>`
-                        ).join('');
-                    }
-
-                    if (debitList.length === 0) {
-                        document.getElementById('debitList').innerHTML =
-                            `<li class="list-group-item text-center text-muted">No Debit Data</li>`;
-                    } else {
-                        document.getElementById('debitList').innerHTML = debitList.map((item, index) =>
-                            `<li class="list-group-item d-flex justify-content-between align-items-center">
-                                <div>
-                                    <span>${item.reason}</span>
-                                </div>
-                                <div class="d-flex align-items-center gap-2">
-                                    <span class="text-danger fw-semibold">₹${item.amount}</span>
-                                    <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editModal" onclick="editExpense(${item.id}, ${item.amount}, '${item.reason}', ${JSON.stringify(item.description)}, '${item.type}', '${item.date}')">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pencil" viewBox="0 0 16 16">
-                                            <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325"/>
-                                        </svg>
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteExpense(${item.id})">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16">
-                                            <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/>
-                                            <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z"/>
-                                        </svg>
-                                    </button>
-                                </div>
-                            </li>`
-                        ).join('');
-                    }
-
-                    document.getElementById('expense').classList.remove('d-none');
+                    renderTransactionList(data.credit, 'creditList', 'success');
+                    renderTransactionList(data.debit, 'debitList', 'danger');
                 } else {
-                    document.getElementById('creditList').innerHTML =
-                        `<li class="list-group-item text-center text-muted">No Credit Data</li>`;
-                    document.getElementById('debitList').innerHTML =
-                        `<li class="list-group-item text-center text-muted">No Debit Data</li>`;
+                    showErrorList();
                 }
-
-                document.getElementById('expense').classList.remove('d-none');
             })
             .catch(error => {
                 console.error("Error fetching expenses:", error);
-
-                document.getElementById('creditList').innerHTML =
-                    `<li class="list-group-item text-center text-muted">Error loading Credit Data</li>`;
-                document.getElementById('debitList').innerHTML =
-                    `<li class="list-group-item text-center text-muted">Error loading Debit Data</li>`;
-
-                document.getElementById('expense').classList.remove('d-none');
+                showErrorList();
             });
+    }
+
+    function fetchYearlySummary(year) {
+        axios.get('/get-yearly-summary/' + year)
+            .then(response => {
+                if (response.data.status === 200) {
+                    renderYearlySummary(response.data.data);
+                } else {
+                    console.warn("No yearly data available");
+                }
+            })
+            .catch(error => {
+                console.error("Error fetching yearly summary:", error);
+            });
+    }
+
+    function renderTransactionList(list, elementId, color) {
+        const container = document.getElementById(elementId);
+        if (!list || list.length === 0) {
+            container.innerHTML = `<li class="list-group-item text-center text-muted">No ${color === 'success' ? 'Credit' : 'Debit'} Data</li>`;
+            return;
+        }
+
+        container.innerHTML = list.map(item => `
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <div><span>${item.reason}</span></div>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="text-${color} fw-semibold">₹${item.amount}</span>
+                    <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editModal"
+                        onclick="editExpense(${item.id}, ${item.amount}, '${item.reason}', ${JSON.stringify(item.description)}, '${item.type}', '${item.date}')">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pencil" viewBox="0 0 16 16">
+                            <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325"/>
+                        </svg>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteExpense(${item.id})">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16">
+                            <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/>
+                            <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z"/>
+                        </svg>
+                    </button>
+                </div>
+            </li>
+        `).join('');
+    }
+
+    function showErrorList() {
+        document.getElementById('creditList').innerHTML =
+            `<li class="list-group-item text-center text-muted">Error loading Credit Data</li>`;
+        document.getElementById('debitList').innerHTML =
+            `<li class="list-group-item text-center text-muted">Error loading Debit Data</li>`;
+    }
+
+    function fetchMonthlySummary(date) {
+        const month = formatDateToYYYYMM(date);
+        axios.get('/get-monthly-summary/' + month)
+            .then(response => {
+                console.log(response.data.data);
+
+                if (response.data.status === 200) {
+                    renderMonthlySummary(response.data.data);
+                } else {
+                    console.warn("No monthly data available");
+                }
+            })
+            .catch(error => {
+                console.error("Error fetching monthly summary:", error);
+            });
+    }
+
+    function renderMonthlySummary(data) {
+        document.getElementById('monthly-credit').textContent = `₹${data.total_credit.toFixed(2)}`;
+        document.getElementById('monthly-debit').textContent = `₹${data.total_debit.toFixed(2)}`;
+        document.getElementById('monthly-balance').textContent = `₹${data.balance.toFixed(2)}`;
+        document.getElementById('monthly-cf').textContent = `₹${data.carry_forward.toFixed(2)}`;
+
+        const container = document.getElementById('monthly-summary-container');
+        container.innerHTML = '';
+
+        data.grouped_by_date.forEach(entry => {
+            const creditHTML = entry.credit.length > 0
+                ? entry.credit.map(txn => `
+                    <div class="d-flex justify-content-between">
+                        <span>${txn.reason}</span>
+                        <span class="text-success">₹${(+txn.amount || 0).toFixed(2)}</span>
+                    </div>
+                `).join('')
+                : '<div class="text-muted">No Income</div>';
+
+            const debitHTML = entry.debit.length > 0
+                ? entry.debit.map(txn => `
+                    <div class="d-flex justify-content-between">
+                        <span>${txn.reason}</span>
+                        <span class="text-danger">₹${(+txn.amount || 0).toFixed(2)}</span>
+                    </div>
+                `).join('')
+                : '<div class="text-muted">No Expense</div>';
+
+            const card = `
+                <div class="card mb-4 p-3">
+                    <div class="fw-bold fs-6 mb-3">${entry.date_formatted}</div>
+                    <div class="row g-3">
+                        <div class="col-sm-6">
+                            <div class="card border-success h-100">
+                                <div class="card-body">
+                                    <h6 class="card-title text-success">Income (Credit)</h6>
+                                    ${creditHTML}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="card border-danger h-100">
+                                <div class="card-body">
+                                    <h6 class="card-title text-danger">Expense (Debit)</h6>
+                                    ${debitHTML}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-3 text-end">
+                        <strong>Balance</strong><br>
+                        ₹${entry.balance.toFixed(2)}
+                    </div>
+                </div>
+            `;
+
+            container.innerHTML += card;
+        });
     }
 
     document.getElementById('addForm').addEventListener('submit', function(e) {

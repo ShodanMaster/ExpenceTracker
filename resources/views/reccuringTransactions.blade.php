@@ -571,9 +571,9 @@
                             tbody.innerHTML += `
                                 <tr>
                                     <td>${(res.current_page - 1) * res.per_page + index + 1}</td>
-                                    <td>${txn.type}</td>
                                     <td>${txn.reason?.name || ''}</td>
                                     <td>${txn.amount}</td>
+                                    <td>${txn.type}</td>
                                     <td>${txn.frequency}</td>
                                     <td>${formatDate(txn.next_occurence)}</td>
                                     <td>${txn.description || ''}</td>
