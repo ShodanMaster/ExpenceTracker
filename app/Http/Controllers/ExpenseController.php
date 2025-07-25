@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\TransactionsExport;
 use App\Models\Expense;
 use App\Models\Reason;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -12,6 +14,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
+use Maatwebsite\Excel\Facades\Excel;
+use Maatwebsite\Excel\Excel as ExcelFormat;
 
 class ExpenseController extends Controller
 {
@@ -573,22 +577,77 @@ class ExpenseController extends Controller
         try {
             $request->validate([
                 'period' => 'required|date_format:Y-m',
-                'transaction_type' => ['required', Rule::in(['credit', 'debit'])],
-                'format' => ['required', Rule::in(['pdf', 'csv'])],
+                'transaction_type' => ['required', Rule::in(['credit', 'debit', 'both'])],
+                'format' => ['required', Rule::in(['pdf', 'xlsx'])],
             ]);
 
             $period = Carbon::parse($request->period)->format('Y-m');
-            $transactionType = $request->transaction_type;
+            $type = $request->transaction_type;
             $format = $request->format;
 
-            // Logic to generate report based on the period, transaction type, and format
-            // ...
+            $query = Expense::with('reason')
+                ->where('user_id', auth()->id())
+                ->whereMonth('date', Carbon::parse($period)->month)
+                ->whereYear('date', Carbon::parse($period)->year);
 
-            return response()->json([
-                'status' => 200,
-                'message' => 'Report generated successfully',
-                // Include report data or file link here
-            ]);
+            if ($type !== 'both') {
+                $query->where('type', $type);
+            }
+
+            $expenses = $query->get();
+            
+            if ($format === 'pdf') {
+                $fileName = "{$type}_report_{$period}.pdf";
+
+                $month = Carbon::parse($period)->month;
+                $year = Carbon::parse($period)->year;
+                $userId = auth()->id();
+
+                $creditExpenses = [];
+                $debitExpenses = [];
+                $expenses = [];
+
+                if ($type === 'both') {
+                    $creditExpenses = Expense::with('reason')
+                        ->where('user_id', $userId)
+                        ->whereMonth('date', $month)
+                        ->whereYear('date', $year)
+                        ->where('type', 'credit')
+                        ->get();
+
+                    $debitExpenses = Expense::with('reason')
+                        ->where('user_id', $userId)
+                        ->whereMonth('date', $month)
+                        ->whereYear('date', $year)
+                        ->where('type', 'debit')
+                        ->get();
+                } else {
+                    $expenses = Expense::with('reason')
+                        ->where('user_id', $userId)
+                        ->whereMonth('date', $month)
+                        ->whereYear('date', $year)
+                        ->where('type', $type)
+                        ->get();
+                }
+
+                $pdf = Pdf::loadView('exports.pdf', [
+                    'period' => $period,
+                    'type' => $type,
+                    'creditExpenses' => $creditExpenses,
+                    'debitExpenses' => $debitExpenses,
+                    'expenses' => $expenses,
+                ]);
+
+                return $pdf->download($fileName);
+            }
+
+            $fileName = "{$type}_report_{$period}.xlsx";
+
+            return Excel::download(
+                new TransactionsExport($period, $type),
+                $fileName,
+                ExcelFormat::XLSX
+            );
 
         } catch (ValidationException $e) {
             return response()->json([
@@ -601,6 +660,7 @@ class ExpenseController extends Controller
             Log::error('Report generation failed: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString(),
             ]);
+
             return response()->json([
                 'status' => 500,
                 'message' => 'Report generation failed. Please try again later.',

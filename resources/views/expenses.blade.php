@@ -171,8 +171,8 @@
                                     <label class="form-check-label" for="pdf">PDF</label>
                                 </div>
                                 <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="radio" name="format" id="excel" value="excel">
-                                    <label class="form-check-label" for="excel">Excel</label>
+                                    <input class="form-check-input" type="radio" name="format" id="xlsx" value="xlsx">
+                                    <label class="form-check-label" for="xlsx">Excel</label>
                                 </div>
                             </div>
                         </div>
@@ -923,11 +923,18 @@
 
     document.getElementById('reportForm').addEventListener('submit', function(e) {
         e.preventDefault();
-        console.log('inside');
 
         const period = document.getElementById('report-expense-period').value;
         const transactionType = document.querySelector('input[name="transaction_type"]:checked').value;
         const format = document.querySelector('input[name="format"]:checked').value;
+
+        // 🔽 Show loading alert BEFORE making the Axios request
+        Swal.fire({
+            title: 'Generating Report...',
+            text: 'Please wait',
+            allowOutsideClick: false,
+            didOpen: () => Swal.showLoading(),
+        });
 
         axios.post('/report', {
             period: period,
@@ -937,22 +944,24 @@
             headers: {
                 'X-CSRF-TOKEN': '{{ csrf_token() }}'
             },
-            responseType: 'blob' // Important for file download
+            responseType: 'blob'
         })
         .then(response => {
             const blob = new Blob([response.data], { type: response.headers['content-type'] });
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `expenses-${month}.${format}`;
+            a.download = `expenses-${period}.${format}`;
             document.body.appendChild(a);
             a.click();
             a.remove();
             window.URL.revokeObjectURL(url);
+
+            // ✅ Close loading alert and show success message
             Swal.fire({
                 icon: 'success',
                 title: 'Exported',
-                text: `Expenses for ${month} exported successfully.`,
+                text: `Expenses for ${period} exported successfully.`,
                 showConfirmButton: false,
                 timer: 2000,
                 timerProgressBar: true,
@@ -960,10 +969,12 @@
         })
         .catch(error => {
             console.error('Error exporting expenses:', error);
+
+            // ❌ Close loading alert and show error message
             Swal.fire({
                 icon: 'error',
                 title: 'Error',
-                text: 'An error occurred while exporting expenses.',
+                text: error.response?.data?.message || 'An error occurred while exporting expenses.',
             });
         });
     });
