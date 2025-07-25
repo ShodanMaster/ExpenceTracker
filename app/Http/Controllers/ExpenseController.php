@@ -575,78 +575,96 @@ class ExpenseController extends Controller
     public function generateReport(Request $request)
     {
         try {
+            // Validate period can be either YYYY or YYYY-MM
             $request->validate([
-                'period' => 'required|date_format:Y-m',
+                'period' => ['required', 'regex:/^\d{4}(-\d{2})?$/'],
                 'transaction_type' => ['required', Rule::in(['credit', 'debit', 'both'])],
                 'format' => ['required', Rule::in(['pdf', 'xlsx'])],
             ]);
 
-            $period = Carbon::parse($request->period)->format('Y-m');
+            $inputPeriod = $request->period;
             $type = $request->transaction_type;
             $format = $request->format;
 
-            $query = Expense::with('reason')
-                ->where('user_id', auth()->id())
-                ->whereMonth('date', Carbon::parse($period)->month)
-                ->whereYear('date', Carbon::parse($period)->year);
+            // Detect if period includes month
+            $isMonthly = preg_match('/^\d{4}-\d{2}$/', $inputPeriod);
+
+            // Parse date accordingly
+            if ($isMonthly) {
+                $date = Carbon::createFromFormat('Y-m', $inputPeriod);
+                $displayPeriod = $date->format('F Y');    // e.g., July 2025
+                $filenamePeriod = $date->format('Y-m');  // e.g., 2025-07
+            } else {
+                $date = Carbon::createFromFormat('Y', $inputPeriod);
+                $displayPeriod = $date->format('Y');     // e.g., 2025
+                $filenamePeriod = $displayPeriod;        // just year
+            }
+
+            $userId = auth()->id();
+
+            // Build base query
+            $query = Expense::with('reason')->where('user_id', $userId);
+
+            if ($isMonthly) {
+                $query->whereYear('date', $date->year)->whereMonth('date', $date->month);
+            } else {
+                $query->whereYear('date', $date->year);
+            }
 
             if ($type !== 'both') {
                 $query->where('type', $type);
             }
 
+            // Retrieve expenses for Excel (and single type PDF case)
             $expenses = $query->get();
-            
+
             if ($format === 'pdf') {
-                $fileName = "{$type}_report_{$period}.pdf";
+                $fileName = "{$type}_report_{$filenamePeriod}.pdf";
 
-                $month = Carbon::parse($period)->month;
-                $year = Carbon::parse($period)->year;
-                $userId = auth()->id();
-
-                $creditExpenses = [];
-                $debitExpenses = [];
-                $expenses = [];
+                $creditExpenses = collect();
+                $debitExpenses = collect();
+                $singleExpenses = collect();
 
                 if ($type === 'both') {
-                    $creditExpenses = Expense::with('reason')
-                        ->where('user_id', $userId)
-                        ->whereMonth('date', $month)
-                        ->whereYear('date', $year)
-                        ->where('type', 'credit')
-                        ->get();
+                    // Separate queries for credit and debit
+                    $creditQuery = Expense::with('reason')->where('user_id', $userId)->where('type', 'credit');
+                    $debitQuery = Expense::with('reason')->where('user_id', $userId)->where('type', 'debit');
 
-                    $debitExpenses = Expense::with('reason')
-                        ->where('user_id', $userId)
-                        ->whereMonth('date', $month)
-                        ->whereYear('date', $year)
-                        ->where('type', 'debit')
-                        ->get();
+                    if ($isMonthly) {
+                        $creditQuery->whereYear('date', $date->year)->whereMonth('date', $date->month);
+                        $debitQuery->whereYear('date', $date->year)->whereMonth('date', $date->month);
+                    } else {
+                        $creditQuery->whereYear('date', $date->year);
+                        $debitQuery->whereYear('date', $date->year);
+                    }
+
+                    $creditExpenses = $creditQuery->get();
+                    $debitExpenses = $debitQuery->get();
                 } else {
-                    $expenses = Expense::with('reason')
-                        ->where('user_id', $userId)
-                        ->whereMonth('date', $month)
-                        ->whereYear('date', $year)
-                        ->where('type', $type)
-                        ->get();
+                    // Single type
+                    $singleExpenses = $expenses;
                 }
 
                 $pdf = Pdf::loadView('exports.pdf', [
-                    'period' => $period,
+                    'period' => $displayPeriod,
                     'type' => $type,
                     'creditExpenses' => $creditExpenses,
                     'debitExpenses' => $debitExpenses,
-                    'expenses' => $expenses,
+                    'expenses' => $singleExpenses,
+                    'isMonthly' => $isMonthly,  // optionally pass if needed in view for formatting
                 ]);
 
                 return $pdf->download($fileName);
             }
 
-            $fileName = "{$type}_report_{$period}.xlsx";
+            // Excel filename
+            $fileName = "{$type}_report_{$filenamePeriod}.xlsx";
 
+            // Return Excel download (ensure TransactionsExport handles 'both' correctly)
             return Excel::download(
-                new TransactionsExport($period, $type),
+                new TransactionsExport($inputPeriod, $type), // pass original period for export logic
                 $fileName,
-                ExcelFormat::XLSX
+                \Maatwebsite\Excel\Excel::XLSX
             );
 
         } catch (ValidationException $e) {

@@ -49,7 +49,7 @@ class TransactionsExport implements FromView
                 ->where('type', $this->type)
                 ->get();
         }
-
+        
         return view('exports.excel', [
             'period' => $this->period,
             'type' => $this->type,

@@ -1,4 +1,12 @@
-<h2>Expense Report - {{ ucfirst($type) }} - {{ \Carbon\Carbon::parse($period)->format('F Y') }}</h2>
+@php
+    // Check if $period contains a month part (format: YYYY-MM)
+    $isMonthly = preg_match('/^\d{4}-\d{2}$/', $period);
+    $displayPeriod = $isMonthly
+        ? \Carbon\Carbon::parse($period)->format('F Y')  // e.g., July 2025
+        : $period;                                      // e.g., 2025 (year only)
+@endphp
+
+<h2>Expense Report - {{ ucfirst($type) }} - {{ $displayPeriod }}</h2>
 
 @if($type === 'both')
     <h3>Credit Transactions</h3>
