@@ -56,12 +56,15 @@
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <div class="form-group">
-                                    <input type="text" class="form-control" id="reason" name="reason" placeholder="Reason" list="reason-list" required>
-                                    <datalist id="reason-list">
-                                        @foreach ($reasons as $reason)
-                                            <option value="{{ $reason->name }}"></option>
-                                        @endforeach
-                                    </datalist>
+                                    <input
+                                        type="text"
+                                        id="reason"
+                                        list="reason-list"
+                                        oninput="getReason('reason', 'reason-list')"
+                                        placeholder="Enter reason"
+                                        class="form-control"
+                                    />
+                                    <datalist id="reason-list"></datalist>
                                 </div>
                             </div>
                             <div class="col-md-6 mb-3">
@@ -109,12 +112,15 @@
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <div class="form-group">
-                                    <input type="text" class="form-control" id="edit-reason" name="reason" placeholder="Reason" list="reason-list" required>
-                                    <datalist id="reason-list">
-                                        @foreach ($reasons as $reason)
-                                            <option value="{{ $reason->name }}"></option>
-                                        @endforeach
-                                    </datalist>
+                                    <input
+                                        type="text"
+                                        id="edit-reason"
+                                        list="edit-reason-list"
+                                        oninput="getReason('edit-reason', 'edit-reason-list')"
+                                        placeholder="Enter reason"
+                                        class="form-control"
+                                    />
+                                    <datalist id="edit-reason-list"></datalist>
                                 </div>
                             </div>
                             <div class="col-md-6 mb-3">
@@ -498,6 +504,34 @@
         } else if (selectedFrequency === 'daily') {
             fetchExpense(formatDateToYYYYMMDD(currentDate));
         }
+    }
+
+    function getReason(inputId, datalistId) {
+        const input = document.getElementById(inputId);
+        const query = input.value;
+        
+        if (query.length < 2) {
+            document.getElementById(datalistId).innerHTML = '';
+            return;
+        }
+
+        axios.post('/get-reasons', { params: { query: query } })
+            .then(response => {
+                if (response.data.status === 200) {
+                    const data = response.data.data;
+                    const dataList = document.getElementById(datalistId);
+                    dataList.innerHTML = '';
+
+                    data.forEach(item => {
+                        const option = document.createElement('option');
+                        option.value = item.name;
+                        dataList.appendChild(option);
+                    });
+                }
+            })
+            .catch(error => {
+                console.error("Error fetching reasons:", error);
+            });
     }
 
     function updateReportModalContext(currentDate, frequency) {

@@ -52,7 +52,10 @@ class ExpenseController extends Controller
                 'description' => 'nullable|string',
             ]);
 
-            $reason = Reason::firstOrCreate(['name' => $request->reason]);
+            $reason = Reason::firstOrCreate([
+                    'name' => $request->reason,
+                    'user_id' => auth()->id(),
+                ]);
 
             $expense = Expense::create([
                 'user_id' => auth()->id(),
@@ -115,6 +118,7 @@ class ExpenseController extends Controller
 
         } catch (Exception $e) {
             DB::rollBack();
+            dd($e);
             Log::error('Storing failed: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString(),
             ]);
@@ -123,6 +127,22 @@ class ExpenseController extends Controller
                 'message' => 'Storing failed. Please try again later.',
             ], 500);
         }
+    }
+
+    public function getReasons(Request $request)
+    {
+        $userId = auth()->id();
+
+        $reasons = Reason::where('user_id', $userId)->select('id', 'name')
+                        ->where('name', 'like', '%'.$request->input('query').'%')
+                        ->latest()
+                        ->take(5)
+                        ->get();
+
+        return response()->json([
+            'status' => 200,
+            'data' => $reasons
+        ]);
     }
 
     public function getExpenses($date)
@@ -394,8 +414,14 @@ class ExpenseController extends Controller
                 'description' => 'nullable|string',
             ]);
 
-            $existing = Reason::where('name', $request->reason)->first();
-            $reason = $existing ?: Reason::create(['name' => $request->reason]);
+            $existing = Reason::where('name', $request->reason)
+                            ->where('user_id', auth()->id())
+                            ->first();
+
+            $reason = $existing ?: Reason::create([
+                'name' => $request->reason,
+                'user_id' => auth()->id(),
+            ]);
 
             $expense = Expense::where('id', $id)->first();
 
@@ -664,7 +690,7 @@ class ExpenseController extends Controller
             return Excel::download(
                 new TransactionsExport($inputPeriod, $type), // pass original period for export logic
                 $fileName,
-                \Maatwebsite\Excel\Excel::XLSX
+                ExcelFormat::XLSX
             );
 
         } catch (ValidationException $e) {

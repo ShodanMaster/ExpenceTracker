@@ -21,6 +21,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     Route::resource('expenses', ExpenseController::class);
+    Route::post('get-reasons', [ExpenseController::class, 'getReasons'])->name('expenses.get-reasons');
     Route::get('get-expenses/{date}', [ExpenseController::class, 'getExpenses'])->name('getexpenses');
     Route::get('get-monthly-summary/{month}', [ExpenseController::class, 'getMonthlySummary'])->name('getmonthlysummary');
     Route::get('get-yearly-summary/{year}', [ExpenseController::class, 'getYearlySummary'])->name('getyearlysummary');
