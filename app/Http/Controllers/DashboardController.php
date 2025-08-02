@@ -75,23 +75,7 @@ public function chartData(Request $request)
             'backgroundColor' => ['#f44336', '#e91e63', '#9c27b0', '#3f51b5', '#2196f3']
         ]]
     ];
-
-    /////////////////////////////////////////////////////////
-//     $topCategoryLabels = $categoryData->sortDesc()->keys()->take(5)->values();
-        // $topCategoryValues = $categoryData->sortDesc()->values()->take(5)->map(fn($v) => floatval($v))->values();
-
-        // $topCategories = [
-        //     'labels' => $topCategoryLabels,
-        //     'datasets' => [
-        //         'label' => 'Top Spending Categories',
-        //         'data' => $topCategoryValues,
-        //         'backgroundColor' => ['#f44336', '#e91e63', '#9c27b0', '#3f51b5', '#2196f3']
-        //     ]
-// ];
-    /////////////////////////////////////////////////////////
-
-
-    // Prepare Income vs Expense ratio pie chart data
+    
     $incomeVsExpense = [
         'labels' => ['Income', 'Expense'],
         'datasets' => [[

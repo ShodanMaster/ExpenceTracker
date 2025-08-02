@@ -140,7 +140,7 @@
         </div>
     </div>
 
-    <!-- PDF Modalt -->
+    <!-- PDF Modal -->
     <div class="modal fade" id="reportModal" tabindex="-1" aria-labelledby="reportModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
@@ -348,25 +348,25 @@
             document.getElementById('daily-button').classList.add('d-none');
             document.getElementById('pdf-button').classList.add('d-none');
 
+            updateMonthYearDisplay(currentDate, frequency); // ✅ Add this line
+
             switch (frequency) {
                 case 'daily':
                     document.getElementById('daily-content').classList.remove('d-none');
                     document.getElementById('daily-button').classList.remove('d-none');
-                    renderCalendar(currentDate);
+                    renderCalendar(currentDate, frequency);
                     fetchExpense(formatDateToYYYYMMDD(currentDate));
                     break;
 
                 case 'monthly':
                     document.getElementById('monthly-content').classList.remove('d-none');
                     document.getElementById('pdf-button').classList.remove('d-none');
-                    renderCalendar(currentDate);
                     fetchMonthlySummary(currentDate);
                     break;
 
                 case 'yearly':
                     document.getElementById('yearly-content').classList.remove('d-none');
                     document.getElementById('pdf-button').classList.remove('d-none');
-                    document.getElementById("monthYear").textContent = currentDate.getFullYear();
                     fetchYearlySummary(currentDate.getFullYear());
                     break;
             }
@@ -393,13 +393,27 @@
         return `${yyyy}-${mm}`;
     }
 
+    function updateMonthYearDisplay(date, frequency) {
+        const monthYearElement = document.getElementById("monthYear");
+
+        if (frequency === 'yearly') {
+            monthYearElement.textContent = date.getFullYear();
+        } else {
+            monthYearElement.textContent = date.toLocaleString('default', {
+                month: 'long',
+                year: 'numeric'
+            });
+        }
+    }
+
+
     function renderCalendar(date, frequency) {
         const calendar = document.getElementById("calendar");
         calendar.innerHTML = "";
 
         if (frequency === 'yearly') {
             // Just show the year, no calendar grid
-            document.getElementById("monthYear").textContent = date.getFullYear();
+            updateMonthYearDisplay(date, frequency);
             calendar.innerHTML = `<div class="text-center py-4">Year view - no calendar grid</div>`;
             return;
         }
@@ -412,8 +426,7 @@
         const today = new Date();
         const todayStr = formatDateToDDMMYYYY(today);
 
-        document.getElementById("monthYear").textContent =
-            date.toLocaleString('default', { month: 'long', year: 'numeric' });
+        updateMonthYearDisplay(date, frequency);
 
         let dayCounter = 1;
         let started = false;
@@ -509,7 +522,7 @@
     function getReason(inputId, datalistId) {
         const input = document.getElementById(inputId);
         const query = input.value;
-        
+
         if (query.length < 2) {
             document.getElementById(datalistId).innerHTML = '';
             return;
