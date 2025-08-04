@@ -35,7 +35,7 @@ class SocialAuthController extends Controller
 
             Auth::login($user);
 
-            return redirect()->intended('/dashboard')->with('succes', 'Logged in successfully.');
+            return redirect()->intended('/dashboard')->with('success', 'Logged in successfully.');
 
         } catch (\Exception $e) {
             return redirect('/login')->withErrors('Failed to login with Google.');
