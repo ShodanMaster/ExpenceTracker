@@ -118,7 +118,6 @@ class ExpenseController extends Controller
 
         } catch (Exception $e) {
             DB::rollBack();
-            dd($e);
             Log::error('Storing failed: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString(),
             ]);
@@ -682,10 +681,11 @@ class ExpenseController extends Controller
             $fileName = "{$type}_report_{$filenamePeriod}.xlsx";
 
             return Excel::download(
-                new TransactionsExport($inputPeriod, $type),
-                $fileName,
-                ExcelFormat::XLSX
+            new TransactionsExport($inputPeriod, $type, $userId),
+            $fileName,
+            ExcelFormat::XLSX
             );
+
 
         } catch (ValidationException $e) {
             return response()->json([

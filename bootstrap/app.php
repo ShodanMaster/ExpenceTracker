@@ -15,6 +15,8 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withSchedule(function (Schedule $schedule): void {
         $schedule->command('recurring:process')->everyMinute();
+        $schedule->command('app:report-email')->monthlyOn(30, '01:00');
+        $schedule->command('app:cleanup-old-reports')->daily();
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

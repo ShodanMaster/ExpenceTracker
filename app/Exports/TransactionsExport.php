@@ -9,53 +9,50 @@ use Maatwebsite\Excel\Concerns\FromView;
 
 class TransactionsExport implements FromView
 {
-    protected $period;
-    protected $type;
+    protected $period, $type, $userId;
 
-    public function __construct($period, $type)
+    public function __construct($period, $type, $userId)
     {
         $this->period = $period;
         $this->type = $type;
+        $this->userId = $userId;
     }
 
     public function view(): View
     {
-        $month = Carbon::parse($this->period)->month;
-        $year = Carbon::parse($this->period)->year;
-        $userId = auth()->id();
+        $date = strlen($this->period) === 7
+            ? Carbon::createFromFormat('Y-m', $this->period)
+            : Carbon::createFromFormat('Y', $this->period);
 
-        $creditExpenses = [];
-        $debitExpenses = [];
+        $baseQuery = Expense::with('reason')
+            ->where('user_id', $this->userId)
+            ->whereYear('date', $date->year);
+
+        if (strlen($this->period) === 7) {
+            $baseQuery->whereMonth('date', $date->month);
+        }
 
         if ($this->type === 'both') {
-            $creditExpenses = Expense::with('reason')
-                ->where('user_id', $userId)
-                ->whereMonth('date', $month)
-                ->whereYear('date', $year)
-                ->where('type', 'credit')
-                ->get();
+            $creditExpenses = (clone $baseQuery)->where('type', 'credit')->get();
+            $debitExpenses = (clone $baseQuery)->where('type', 'debit')->get();
 
-            $debitExpenses = Expense::with('reason')
-                ->where('user_id', $userId)
-                ->whereMonth('date', $month)
-                ->whereYear('date', $year)
-                ->where('type', 'debit')
-                ->get();
-        } else {
-            $singleTypeExpenses = Expense::with('reason')
-                ->where('user_id', $userId)
-                ->whereMonth('date', $month)
-                ->whereYear('date', $year)
-                ->where('type', $this->type)
-                ->get();
+            return view('exports.excel', [
+                'type' => $this->type,
+                'period' => $this->period,
+                'creditExpenses' => $creditExpenses,
+                'debitExpenses' => $debitExpenses,
+                'expenses' => collect(), // avoid error in blade
+            ]);
         }
-        
+
+        $expenses = (clone $baseQuery)->where('type', $this->type)->get();
+
         return view('exports.excel', [
-            'period' => $this->period,
             'type' => $this->type,
-            'creditExpenses' => $creditExpenses,
-            'debitExpenses' => $debitExpenses,
-            'expenses' => $this->type !== 'both' ? $singleTypeExpenses : null,
+            'period' => $this->period,
+            'expenses' => $expenses,
+            'creditExpenses' => collect(),
+            'debitExpenses' => collect(),
         ]);
     }
 }
