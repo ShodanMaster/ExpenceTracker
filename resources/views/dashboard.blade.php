@@ -4,8 +4,6 @@
 
 @section('content')
 
-<h1 class="text-center fw-bold mb-5">Dashboard</h1>
-
 <div class="container mb-5">
 
   <!-- Time Range Filters -->
