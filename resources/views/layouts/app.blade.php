@@ -13,6 +13,31 @@
     <script src="{{ asset("asset/js/axios.min.js") }}"></script>
     <script src="{{ asset('asset/bootstrap/bootstrap.bundle.min.js') }}"></script>
     <script src="{{ asset('asset/js/sweetalert.min.js') }}"></script>
+    <script>
+        @if(session('success'))
+            Swal.fire({
+                icon: 'success',
+                title: 'Success!',
+                text: '{{ session('success') }}',
+                timer: 1500,
+                showConfirmButton: false,
+                showCloseButton: false,
+                timerProgressBar: false
+            });
+        @endif
+
+        @if(session('error'))
+            Swal.fire({
+                icon: 'error',
+                title: 'Login Failed',
+                text: '{{ session('error') }}',
+                timer: 1500,
+                showConfirmButton: false,
+                showCloseButton: false,
+                timerProgressBar: false
+            });
+        @endif
+    </script>
     @stack('custom-scripts')
 </body>
 </html>

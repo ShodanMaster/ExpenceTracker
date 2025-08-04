@@ -32,7 +32,7 @@ class AuthenticatedSessionController extends Controller
             return redirect()->route('dashboard')->with('success', 'Logged in successfully.');
         }catch (\Exception $e) {
             return redirect()->back()
-                         ->withInput($request->only('email')) // retain the email field
+                         ->withInput($request->only('email'))
                          ->with('error', 'Login failed. Please check your credentials and try again.');
         }
     }
