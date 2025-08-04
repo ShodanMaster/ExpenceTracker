@@ -309,7 +309,7 @@
                 </tr>
             </thead>
             <tbody id="yearly-summary-body">
-                <!-- Yearly summary rows will be injected here -->
+
             </tbody>
         </table>
     </div>
@@ -348,7 +348,7 @@
             document.getElementById('daily-button').classList.add('d-none');
             document.getElementById('pdf-button').classList.add('d-none');
 
-            updateMonthYearDisplay(currentDate, frequency); // ✅ Add this line
+            updateMonthYearDisplay(currentDate, frequency);
 
             switch (frequency) {
                 case 'daily':
@@ -412,7 +412,7 @@
         calendar.innerHTML = "";
 
         if (frequency === 'yearly') {
-            // Just show the year, no calendar grid
+
             updateMonthYearDisplay(date, frequency);
             calendar.innerHTML = `<div class="text-center py-4">Year view - no calendar grid</div>`;
             return;
@@ -556,12 +556,12 @@
         if (!labelEl || !inputEl) return;
 
         if (frequency === 'monthly') {
-            const monthStr = currentDate.toLocaleString('default', { month: 'long' }); // "July"
-            const year = currentDate.getFullYear(); // 2025
-            labelEl.textContent = `${monthStr} ${year} Report`; // "Month: July 2025 Report"
-            inputEl.value = `${year}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`; // "2025-07"
+            const monthStr = currentDate.toLocaleString('default', { month: 'long' });
+            const year = currentDate.getFullYear();
+            labelEl.textContent = `${monthStr} ${year} Report`;
+            inputEl.value = `${year}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
         } else if (frequency === 'yearly') {
-            const yearStr = currentDate.getFullYear(); // "2025"
+            const yearStr = currentDate.getFullYear();
             labelEl.textContent = `Year: ${yearStr} Report`;
             inputEl.value = yearStr;
         }
@@ -619,22 +619,21 @@
         container.classList.remove('d-none');
 
         const tbody = document.getElementById('yearly-summary-body');
-        tbody.innerHTML = ''; // clear previous rows
+        tbody.innerHTML = '';
 
-        // Check if there are any details to show
         if (!data.grouped_by_month || data.grouped_by_month.length === 0) {
             tbody.innerHTML = `<tr><td colspan="6" class="text-center">No details available.</td></tr>`;
             return;
         }
 
         data.grouped_by_month.forEach(entry => {
-            // Summarized reason-based credit/debit breakdown
+
             const creditDetails = entry.credit.map(c =>
-                `${c.reason || 'N/A'}: $${c.amount.toFixed(2)}`
+                `${c.reason || 'N/A'}: ₹${c.amount.toFixed(2)}`
             ).join('<br>');
 
             const debitDetails = entry.debit.map(d =>
-                `${d.reason || 'N/A'}: $${d.amount.toFixed(2)}`
+                `${d.reason || 'N/A'}: ₹${d.amount.toFixed(2)}`
             ).join('<br>');
 
             const row = document.createElement('tr');
@@ -975,7 +974,6 @@
         const transactionType = document.querySelector('input[name="transaction_type"]:checked').value;
         const format = document.querySelector('input[name="format"]:checked').value;
 
-        // 🔽 Show loading alert BEFORE making the Axios request
         Swal.fire({
             title: 'Generating Report...',
             text: 'Please wait',
@@ -1004,7 +1002,6 @@
             a.remove();
             window.URL.revokeObjectURL(url);
 
-            // ✅ Close loading alert and show success message
             Swal.fire({
                 icon: 'success',
                 title: 'Exported',
@@ -1017,7 +1014,6 @@
         .catch(error => {
             console.error('Error exporting expenses:', error);
 
-            // ❌ Close loading alert and show error message
             Swal.fire({
                 icon: 'error',
                 title: 'Error',
