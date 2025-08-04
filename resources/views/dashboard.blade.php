@@ -88,8 +88,6 @@
             <div class="card-body p-3">
                 <div class="ratio ratio-1x1">
                     <canvas id="topCategoryChart" style="max-width: 100%; max-height: 100%;"></canvas>
-
-                    {{-- <canvas id="topCategoryChart"></canvas> --}}
                 </div>
             </div>
         </div>
