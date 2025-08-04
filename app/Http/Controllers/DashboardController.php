@@ -17,100 +17,125 @@ class DashboardController extends Controller
         return view('dashboard');
     }
 
-public function chartData(Request $request)
-{
-    $user = auth()->user();
-    $type = $request->get('type', 'daily');
+    public function chartData(Request $request)
+    {
+        $user = auth()->user();
+        $type = $request->get('type', 'daily');
+        $date = $request->get('date', now()->toDateString());
+        $inWallet = Expense::where('user_id', $user->id)
+                        ->selectRaw('SUM(CASE WHEN type = "credit" THEN amount ELSE 0 END) -
+                                    SUM(CASE WHEN type = "debit" THEN amount ELSE 0 END) as balance')
+                        ->value('balance') ?? 0;
 
-    $expenses = Expense::with('reason')
-        ->where('user_id', $user->id)
-        ->when($type === 'daily', fn($q) => $q->whereDate('date', today()))
-        ->when($type === 'monthly', fn($q) => $q->whereMonth('date', today()->month)->whereYear('date', today()->year))
-        ->when($type === 'yearly', fn($q) => $q->whereYear('date', today()->year))
-        ->get();
+        $selectedDate = Carbon::parse($date);
 
-    $groupKey = match ($type) {
-        'daily' => 'g A',   // readable hour: 1 AM, 2 PM
-        'monthly' => 'd',
-        'yearly' => 'M',
-    };
+        $expenses = Expense::with('reason')
+            ->where('user_id', $user->id)
+            ->when($type === 'daily', fn($q) => $q->whereDate('date', $selectedDate))
+            ->when($type === 'monthly', fn($q) =>
+                $q->whereMonth('date', $selectedDate->month)->whereYear('date', $selectedDate->year)
+            )
+            ->when($type === 'yearly', fn($q) =>
+                $q->whereYear('date', $selectedDate->year)
+            )
+            ->get();
 
-    $labels = match ($type) {
-        'daily' => collect(range(0, 23))->map(fn($hour) => Carbon::createFromTime($hour)->format('g A')),
-        'monthly' => collect(range(1, now()->daysInMonth))->map(fn($day) => str_pad($day, 2, '0', STR_PAD_LEFT)),
-        'yearly' => collect(range(1, 12))->map(fn($m) => Carbon::create()->month($m)->format('F')),
-    };
+        $groupKey = match ($type) {
+            'daily' => 'g A',
+            'monthly' => 'd',
+            'yearly' => 'M',
+        };
 
-    $grouped = $expenses->groupBy(fn($e) => Carbon::parse($e->date)->format($groupKey));
+        $labels = match ($type) {
+            'daily' => collect(range(0, 23))->map(fn($hour) => Carbon::createFromTime($hour)->format('g A')),
+            'monthly' => collect(range(1, $selectedDate->daysInMonth))->map(fn($day) => str_pad($day, 2, '0', STR_PAD_LEFT)),
+            'yearly' => collect(range(1, 12))->map(fn($m) => Carbon::create()->month($m)->format('F')),
+        };
 
-    $credits = $labels->map(fn($label) => (float) ($grouped->get($label)?->where('type', 'credit')->sum('amount') ?? 0));
-    $debits  = $labels->map(fn($label) => (float) ($grouped->get($label)?->where('type', 'debit')->sum('amount') ?? 0));
+        $grouped = $expenses->groupBy(fn($e) => Carbon::parse($e->date)->format($groupKey));
 
-    // Category-wise breakdown
-    $categoryData = $expenses->where('type', 'debit')
-        ->groupBy(fn($e) => $e->reason->name ?? 'Other')
-        ->map(fn($group) => $group->sum('amount'));
+        $credits = $labels->map(fn($label) => (float) ($grouped->get($label)?->where('type', 'credit')->sum('amount') ?? 0));
+        $debits  = $labels->map(fn($label) => (float) ($grouped->get($label)?->where('type', 'debit')->sum('amount') ?? 0));
 
-    $categoryChart = [
-        'labels' => $categoryData->keys()->values(),
-        'datasets' => [[
-            'label' => 'Expenses by Category',
-            'data' => $categoryData->values(),
-            'backgroundColor' => collect($categoryData->keys())->map(fn() => 'rgba('.rand(0,255).','.rand(0,255).','.rand(0,255).',0.6)')
-        ]]
-    ];
+        $categoryData = $expenses->where('type', 'debit')
+            ->groupBy(fn($e) => $e->reason->name ?? 'Other')
+            ->map(fn($group) => $group->sum('amount'));
 
-    $totalIncome = $expenses->where('type', 'credit')->sum('amount');
-    $totalExpense = $expenses->where('type', 'debit')->sum('amount');
-    $savings = $totalIncome - $totalExpense;
+        $categoryChart = [
+            'labels' => $categoryData->keys()->values(),
+            'datasets' => [[
+                'label' => 'Expenses by Category',
+                'data' => $categoryData->values(),
+                'backgroundColor' => collect($categoryData->keys())->map(fn() =>
+                    'rgba('.rand(0,255).','.rand(0,255).','.rand(0,255).',0.6)'
+                )
+            ]]
+        ];
 
-    $topCategoryLabels = $categoryData->sortDesc()->keys()->take(5)->values();
-    $topCategoryValues = $categoryData->sortDesc()->values()->take(5)->map(fn($v) => floatval($v))->values();
+        $totalIncome = $expenses->where('type', 'credit')->sum('amount');
+        $totalExpense = $expenses->where('type', 'debit')->sum('amount');
+        $savings = $totalIncome - $totalExpense;
 
-    $topCategories = [
-        'labels' => $topCategoryLabels,
-        'datasets' => [[
-            'label' => 'Top Spending Categories',
-            'data' => $topCategoryValues,
-            'backgroundColor' => ['#f44336', '#e91e63', '#9c27b0', '#3f51b5', '#2196f3']
-        ]]
-    ];
-    
-    $incomeVsExpense = [
-        'labels' => ['Income', 'Expense'],
-        'datasets' => [[
-            'data' => [(float) $totalIncome, (float) $totalExpense],
-            'backgroundColor' => [
-                'rgba(75, 192, 192, 0.6)',
-                'rgba(255, 99, 132, 0.6)'
-            ]
-        ]]
-    ];
+        $topCategoryLabels = $categoryData->sortDesc()->keys()->take(5)->values();
+        $topCategoryValues = $categoryData->sortDesc()->values()->take(5)->map(fn($v) => floatval($v))->values();
 
-    $averages = [
-        'daily' => Expense::where('user_id', $user->id)->where('type', 'debit')->whereDate('date', '>=', now()->subDays(30))->avg('amount') ?? 0,
-        'monthly' => Expense::where('user_id', $user->id)->where('type', 'debit')->whereDate('date', '>=', now()->subMonths(1))->avg('amount') ?? 0,
-        'yearly' => Expense::where('user_id', $user->id)->where('type', 'debit')->whereDate('date', '>=', now()->subYears(1))->avg('amount') ?? 0,
-    ];
+        $topCategories = [
+            'labels' => $topCategoryLabels,
+            'datasets' => [[
+                'label' => 'Top Spending Categories',
+                'data' => $topCategoryValues,
+                'backgroundColor' => ['#f44336', '#e91e63', '#9c27b0', '#3f51b5', '#2196f3']
+            ]]
+        ];
 
-    return response()->json([
-        'total_income' => $totalIncome,
-        'total_expense' => $totalExpense,
-        'savings' => $savings,
-        'labels' => $labels,
-        'credits' => $credits->map(fn($v) => floatval($v)),
-        'debits' => $debits->map(fn($v) => floatval($v)),
-        'categories' => $categoryChart,
-        'summary' => [
-            'total_expense' => $totalExpense,
+        $incomeVsExpense = [
+            'labels' => ['Income', 'Expense'],
+            'datasets' => [[
+                'data' => [(float) $totalIncome, (float) $totalExpense],
+                'backgroundColor' => [
+                    'rgba(75, 192, 192, 0.6)',
+                    'rgba(255, 99, 132, 0.6)'
+                ]
+            ]]
+        ];
+
+        $averages = [
+            'daily' => Expense::where('user_id', $user->id)
+                ->where('type', 'debit')
+                ->whereDate('date', '>=', now()->subDays(30))
+                ->avg('amount') ?? 0,
+
+            'monthly' => Expense::where('user_id', $user->id)
+                ->where('type', 'debit')
+                ->whereDate('date', '>=', now()->subMonths(1))
+                ->avg('amount') ?? 0,
+
+            'yearly' => Expense::where('user_id', $user->id)
+                ->where('type', 'debit')
+                ->whereDate('date', '>=', now()->subYears(1))
+                ->avg('amount') ?? 0,
+        ];
+
+        return response()->json([
             'total_income' => $totalIncome,
-            'savings' => $savings
-        ],
-        'topCategories' => $topCategories,
-        'incomeVsExpense' => $incomeVsExpense,
-        'averages' => $averages,
-    ]);
-}
+            'total_expense' => $totalExpense,
+            'in_wallet' => $inWallet,
+            'savings' => $savings,
+            'labels' => $labels,
+            'credits' => $credits,
+            'debits' => $debits,
+            'categories' => $categoryChart,
+            'summary' => [
+                'total_expense' => $totalExpense,
+                'total_income' => $totalIncome,
+                'savings' => $savings
+            ],
+            'topCategories' => $topCategories,
+            'incomeVsExpense' => $incomeVsExpense,
+            'averages' => $averages,
+        ]);
+    }
+
     /**
      * Show the form for creating a new resource.
      */
