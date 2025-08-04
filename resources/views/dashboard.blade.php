@@ -61,16 +61,16 @@
     </div>
 
     <!-- Income vs Expense -->
-<div class="col-md-6 col-xl-3">
-    <div class="card shadow-sm h-100 border-0">
-        <div class="card-header text-center fw-semibold bg-light">Income vs Expense</div>
-        <div class="card-body p-3">
-            <div class="ratio ratio-1x1">
-                <canvas id="incomeVsExpenseChart"></canvas>
+    <div class="col-md-6 col-xl-3">
+        <div class="card shadow-sm h-100 border-0">
+            <div class="card-header text-center fw-semibold bg-light">Income vs Expense</div>
+            <div class="card-body p-3">
+                <div class="ratio ratio-1x1">
+                    <canvas id="incomeVsExpenseChart"></canvas>
+                </div>
             </div>
         </div>
     </div>
-</div>
 
 
     <!-- Category-wise Expense -->
