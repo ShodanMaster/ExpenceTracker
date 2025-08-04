@@ -11,40 +11,40 @@
         <form action="{{route('login')}}" method="POST" id="login-form">
             @csrf
             <div class="card-body">
-            <div class="row g-3"> <!-- g-3 adds grid gap for spacing -->
-                <div class="col-md-6">
-                <div class="form-group">
-                    <input type="email" class="form-control" name="email" id="email" placeholder="Email" value="{{ old('email') }}" required>
-                </div>
-                </div>
-                <div class="col-md-6">
-                <div class="form-group">
-                    <input type="password" class="form-control" name="password" id="password" placeholder="Password" required>
-                    <!-- Show password and Forgot password on the same line -->
-                    <div class="d-flex justify-content-between align-items-center mt-2">
-                    <div class="form-check mb-0">
-                        <input class="form-check-input" type="checkbox" id="show-password" />
-                        <label class="form-check-label" for="show-password">Show Password</label>
+                <div class="row g-3"> <!-- g-3 adds grid gap for spacing -->
+                    <div class="col-md-6">
+                    <div class="form-group">
+                        <input type="email" class="form-control" name="email" id="email" placeholder="Email" value="{{ old('email') }}" required>
                     </div>
-                    <a href="{{ route('password.request') }}" class="small text-decoration-none">Forgot password?</a>
+                    </div>
+                    <div class="col-md-6">
+                    <div class="form-group">
+                        <input type="password" class="form-control" name="password" id="password" placeholder="Password" required>
+                        <!-- Show password and Forgot password on the same line -->
+                        <div class="d-flex justify-content-between align-items-center mt-2">
+                        <div class="form-check mb-0">
+                            <input class="form-check-input" type="checkbox" id="show-password" />
+                            <label class="form-check-label" for="show-password">Show Password</label>
+                        </div>
+                        <a href="{{ route('password.request') }}" class="small text-decoration-none">Forgot password?</a>
+                        </div>
+                    </div>
                     </div>
                 </div>
+
+                <!-- Signup link centered below inputs -->
+                <div class="text-center my-4">
+                    <p class="mb-0">Don't have an account? <a href="javascript:void(0);" id="show-signup-form" class="text-primary text-decoration-none">Sign up</a></p>
                 </div>
-            </div>
 
-            <!-- Signup link centered below inputs -->
-            <div class="text-center my-4">
-                <p class="mb-0">Don't have an account? <a href="javascript:void(0);" id="show-signup-form" class="text-primary text-decoration-none">Sign up</a></p>
-            </div>
-
-            <!-- Google login button -->
-            <div class="d-flex justify-content-center">
-                <a href="{{ url('auth/google') }}" class="btn btn-primary d-flex align-items-center justify-content-center" style="width: 180px;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-google me-2" viewBox="0 0 16 16">
-                    <path d="M15.545 6.558a9.4 9.4 0 0 1 .139 1.626c0 2.434-.87 4.492-2.384 5.885h.002C11.978 15.292 10.158 16 8 16A8 8 0 1 1 8 0a7.7 7.7 0 0 1 5.352 2.082l-2.284 2.284A4.35 4.35 0 0 0 8 3.166c-2.087 0-3.86 1.408-4.492 3.304a4.8 4.8 0 0 0 0 3.063h.003c.635 1.893 2.405 3.301 4.492 3.301 1.078 0 2.004-.276 2.722-.764h-.003a3.7 3.7 0 0 0 1.599-2.431H8v-3.08z"/>
-                </svg> Login with Google
-                </a>
-            </div>
+                <!-- Google login button -->
+                <div class="d-flex justify-content-center">
+                    <a href="{{ url('auth/google') }}" class="btn btn-primary d-flex align-items-center justify-content-center" style="width: 180px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-google me-2" viewBox="0 0 16 16">
+                        <path d="M15.545 6.558a9.4 9.4 0 0 1 .139 1.626c0 2.434-.87 4.492-2.384 5.885h.002C11.978 15.292 10.158 16 8 16A8 8 0 1 1 8 0a7.7 7.7 0 0 1 5.352 2.082l-2.284 2.284A4.35 4.35 0 0 0 8 3.166c-2.087 0-3.86 1.408-4.492 3.304a4.8 4.8 0 0 0 0 3.063h.003c.635 1.893 2.405 3.301 4.492 3.301 1.078 0 2.004-.276 2.722-.764h-.003a3.7 3.7 0 0 0 1.599-2.431H8v-3.08z"/>
+                    </svg> Login with Google
+                    </a>
+                </div>
             </div>
             <div class="card-footer bg-dark d-flex justify-content-between">
 
@@ -88,6 +88,14 @@
                 <!-- Link to Login form -->
                 <div class="form-group text-center mb-3">
                     <p>Already have an account? <a href="javascript:void(0);" id="show-login-form">Login</a></p>
+                </div>
+                 <!-- Google login button -->
+                <div class="d-flex justify-content-center">
+                    <a href="{{ url('auth/google') }}" class="btn btn-primary d-flex align-items-center justify-content-center" style="width: 180px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-google me-2" viewBox="0 0 16 16">
+                        <path d="M15.545 6.558a9.4 9.4 0 0 1 .139 1.626c0 2.434-.87 4.492-2.384 5.885h.002C11.978 15.292 10.158 16 8 16A8 8 0 1 1 8 0a7.7 7.7 0 0 1 5.352 2.082l-2.284 2.284A4.35 4.35 0 0 0 8 3.166c-2.087 0-3.86 1.408-4.492 3.304a4.8 4.8 0 0 0 0 3.063h.003c.635 1.893 2.405 3.301 4.492 3.301 1.078 0 2.004-.276 2.722-.764h-.003a3.7 3.7 0 0 0 1.599-2.431H8v-3.08z"/>
+                    </svg> Login with Google
+                    </a>
                 </div>
             </div>
             <div class="card-footer bg-dark d-flex justify-content-end">
