@@ -151,6 +151,14 @@
                         backgroundColor: ['#e0e0e0']
                     }]
                 };
+
+                options = {
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { enabled: false }
+                    },
+                    ...options
+                };
             }
 
             const baseOptions = {
