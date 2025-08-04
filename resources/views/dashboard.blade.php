@@ -252,7 +252,7 @@
                     response.data.in_wallet.toLocaleString(undefined, {
                         style: 'currency',
                         currency: 'INR'
-                    });
+                    }) + '₹';
 
                 renderChart('incomeVsExpenseChart', 'pie', {
                     labels: incomeVsExpense.labels || fallbackLabels,
