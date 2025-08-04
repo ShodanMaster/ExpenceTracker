@@ -17,12 +17,8 @@ class ReportEmail extends Command
 
     public function handle(ReportGeneratorService $reportGenerator)
     {
-        // $period = now()->subMonth()->format('Y-m');
-        // $display = now()->subMonth()->format('F Y');
-
-        $period = now()->format('Y-m'); // e.g., "2025-08"
-$display = now()->format('F Y'); // e.g., "August 2025"
-
+        $period = now()->subMonth()->format('Y-m');
+        $display = now()->subMonth()->format('F Y');
 
         $users = User::all();
 
