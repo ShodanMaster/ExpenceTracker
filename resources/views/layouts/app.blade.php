@@ -7,6 +7,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Expense Tracker</title>
     <link rel="stylesheet" href="{{ asset('asset/bootstrap/boostrap.min.css') }}">
+    <link rel="icon" href="{{ asset('asset/favicon.png') }}" type="image/x-icon">
 </head>
 <body>
     @yield('app-content')
