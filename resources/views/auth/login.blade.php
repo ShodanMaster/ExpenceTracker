@@ -126,6 +126,67 @@
             const passwordField = document.getElementById('signup-password');
             passwordField.type = this.checked ? 'text' : 'password';
         });
+
+        document.getElementById('signup-form').addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const name = document.getElementById('name').value.trim();
+            const email = document.getElementById('signup-email').value.trim();
+            const password = document.getElementById('signup-password').value;
+            const confirmPassword = document.getElementById('signup-password-confirmation').value;
+
+            if (password !== confirmPassword) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Password Mismatch',
+                    text: 'The password and confirmation do not match.',
+                    confirmButtonColor: '#3085d6',
+                });
+                return;
+            }
+
+            try {
+                const response = await axios.post('/register', {
+                    name: name,
+                    email: email,
+                    password: password,
+                    password_confirmation: confirmPassword,
+                });
+
+                if (response.data.status === 200) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Registration Successful',
+                        text: response.data.message,
+                        confirmButtonColor: '#3085d6',
+                    }).then(() => {
+                        // Redirect to dashboard
+                        window.location.href = response.data.redirect_url;
+                    });
+                }
+
+            } catch (error) {
+                if (error.response && error.response.status === 422) {
+                    const errors = error.response.data.errors;
+                    let messages = Object.values(errors).flat().join('\n');
+
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Validation Error',
+                        text: messages,
+                        confirmButtonColor: '#d33',
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Server Error',
+                        text: 'Something went wrong. Please try again later.',
+                        confirmButtonColor: '#d33',
+                    });
+                }
+            }
+        });
+
     });
 </script>
 @endpush
