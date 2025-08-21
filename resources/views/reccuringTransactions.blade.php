@@ -555,6 +555,8 @@
                 axios.get(`/transactions?page=${page}&per_page=10&search=${encodeURIComponent(search)}`)
                     .then(response => {
                         const res = response.data;
+                        console.log(res);
+
                         const tbody = document.getElementById('transactions-body');
                         tbody.innerHTML = '';
 

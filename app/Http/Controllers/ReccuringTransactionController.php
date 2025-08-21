@@ -35,7 +35,7 @@ class ReccuringTransactionController extends Controller
                 'frequency_value' => 'nullable|string',
             ]);
 
-            $reason = Reason::firstOrCreate(['name' => $request->reason]);
+            $reason = Reason::firstOrCreate([ 'user_id' => auth()->id(), 'name' => $request->reason]);
 
             $exists = ReccuringTransaction::where([
                 ['user_id', auth()->id()],

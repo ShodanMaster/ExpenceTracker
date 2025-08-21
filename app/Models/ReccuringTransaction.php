@@ -16,6 +16,7 @@ class ReccuringTransaction extends Model
         'day_of_week',
         'day_of_month',
         'month_of_year',
+        'description',
         'last_occurence',
         'next_occurence',
         'is_active'
@@ -26,7 +27,7 @@ class ReccuringTransaction extends Model
         'last_occurence' => 'datetime',
         'next_occurence' => 'datetime',
     ];
-    
+
     public function reason()
     {
         return $this->belongsTo(Reason::class);
